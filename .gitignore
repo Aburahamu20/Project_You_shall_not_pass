@@ -1,0 +1,36 @@
+# Variables y credenciales
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# JavaScript / frontend
+node_modules/
+dist/
+.vite/
+npm-debug.log*
+
+# Python / Lambda
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# AWS y herramientas
+.aws-sam/
+.serverless/
+samconfig.toml
+
+# IDE y sistema
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Wokwi y compilación
+.pio/
+build/
+*.elf
+*.bin
