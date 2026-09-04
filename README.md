@@ -9,6 +9,7 @@
 ![Badge](https://img.shields.io/badge/Asignatura-SIY6122-0078D4?style=for-the-badge)
 ![Badge](https://img.shields.io/badge/Evaluación-EP1-28a745?style=for-the-badge)
 ![Badge](https://img.shields.io/badge/Fase-Diseño%20conceptual-f0ad4e?style=for-the-badge)
+![Badge](https://img.shields.io/badge/Diseño-1.1-0A66C2?style=for-the-badge)
 ![Badge](https://img.shields.io/badge/Cloud-AWS%20Academy-FF9900?style=for-the-badge)
 ![Badge](https://img.shields.io/badge/Simulación-Web%20%2B%20Wokwi-6C63FF?style=for-the-badge)
 
@@ -55,6 +56,7 @@
 - [17. Estructura preparada para la implementación](#17-estructura-preparada-para-la-implementación)
 - [18. Revisión de requisitos](#18-revisión-de-requisitos)
 - [19. Próxima fase](#19-próxima-fase)
+- [20. Diseño 1.1](#20-diseño-11)
 
 ---
 
@@ -334,13 +336,13 @@ Más detalles: [Modelo de datos](docs/modelo-datos.md).
 - No se guardarán claves de AWS dentro del repositorio.
 - Wokwi y la aplicación llamarán a una API; solamente Lambda utilizará permisos AWS mediante `LabRole`.
 - Las variables propias de cada cuenta se mantendrán fuera del código.
-- Los registros históricos no podrán ser eliminados desde el dashboard.
+- Los registros históricos no podrán modificarse ni eliminarse desde el dashboard; su eliminación o anonimización se realizará solo mediante la política de conservación.
 - Toda corrección manual guardará usuario, fecha, hora y motivo.
 - Las fotografías reales requerirán consentimiento y controles adicionales.
 - Durante la fase inicial se usarán identidades y rostros ficticios.
 - Cada solicitud tendrá un identificador único para evitar duplicados.
 
-Más detalles: [Roles y seguridad](docs/seguridad-y-roles.md).
+Más detalles: [Roles y seguridad](docs/seguridad-y-roles.md) y [Cumplimiento legal](docs/cumplimiento-legal.md).
 
 ---
 
@@ -442,7 +444,12 @@ Project_You_Shall_Not_Pass/
 │   ├── arquitectura.md
 │   ├── casos-prueba.md
 │   ├── modelo-datos.md
-│   └── seguridad-y-roles.md
+│   ├── seguridad-y-roles.md
+│   ├── cambios-diseno-1.1.md
+│   ├── decisiones-tecnicas.md
+│   ├── estados-acceso.md
+│   ├── cumplimiento-legal.md
+│   └── openapi.yaml
 ├── frontend/
 │   └── README.md
 ├── backend/
@@ -503,6 +510,26 @@ En la Fase 2 se deberá:
 10. Registrar los resultados de cada prueba.
 
 > Las reglas, roles, campos de visitantes y capacidad máxima deberán ser revisados por todo el equipo antes de comenzar la implementación.
+
+---
+
+## 20. Diseño 1.1
+
+El Diseño 1.1 mantiene el alcance original e incorpora antes de programar:
+
+- API versionada bajo `/api/v1` y contrato OpenAPI.
+- Estados controlados, idempotencia y una sola solicitud activa.
+- Proveedores faciales `MOCK` y `REKOGNITION`.
+- Orígenes RFID y dispositivos identificados.
+- Políticas, repositorios y códigos de rechazo estandarizados.
+- Correcciones mediante eventos compensatorios.
+- Pruebas de concurrencia, permisos, privacidad y fallos AWS.
+- Datos ficticios por defecto, captura facial temporal y método alternativo.
+- Conservación limitada y eliminación o anonimización controlada.
+
+Documentos: [cambios](docs/cambios-diseno-1.1.md), [decisiones](docs/decisiones-tecnicas.md), [estados](docs/estados-acceso.md), [cumplimiento legal](docs/cumplimiento-legal.md) y [OpenAPI](docs/openapi.yaml).
+
+> Es una simulación académica de control de acceso, no un sistema certificado de asistencia laboral ni una certificación legal.
 
 ---
 

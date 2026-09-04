@@ -1,19 +1,17 @@
 # Infraestructura AWS
 
-Esta carpeta contendrá las plantillas para desplegar el proyecto en AWS Academy Learner Lab.
+Contendrá AWS SAM o CloudFormation compatible con Learner Lab.
 
-## Recursos previstos
+## Recursos
 
-- Tablas DynamoDB.
-- Funciones Lambda.
-- API Gateway.
-- Configuración permitida de Cognito.
-- Permisos compatibles con `LabRole`.
-- Logs de CloudWatch.
-- Hosting estático si el laboratorio lo permite.
+- DynamoDB con TTL.
+- Lambda con permisos mínimos.
+- API Gateway HTTPS.
+- Cognito si el laboratorio permite crearlo.
+- CloudWatch con retención corta.
+- S3 privado y hosting si corresponde.
+- Rekognition opcional y desactivado por defecto.
 
-## Objetivo de portabilidad
+## Portabilidad, costo y privacidad
 
-La infraestructura deberá poder recrearse en una segunda cuenta de Learner Lab con el menor número posible de cambios. Se evitarán identificadores de cuenta, ARN y URL escritos directamente en el código.
-
-Cuando comience la implementación se evaluará AWS SAM o CloudFormation, según los permisos disponibles en el laboratorio.
+Sin ARN, cuenta o URL fijos; sin EC2, RDS ni NAT Gateway inicialmente. Se parametrizarán región, ambiente, tablas y proveedor. Las plantillas definirán cifrado, retención y eliminación, sin almacenamiento permanente de capturas faciales.

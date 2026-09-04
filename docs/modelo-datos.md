@@ -1,119 +1,76 @@
-# Modelo de datos conceptual
+# Modelo de datos conceptual — Diseño 1.1
 
 ## Principios
 
-- Los movimientos confirmados son inmutables.
-- El estado actual de una persona debe concordar con su último movimiento.
-- El aforo cambia únicamente después de la confirmación del sensor.
-- Cada solicitud y evento utiliza un identificador único.
-- Las fechas se guardan en UTC y se muestran con la zona horaria de Chile.
+- Los eventos confirmados no se sobrescriben.
+- Las correcciones crean eventos compensatorios.
+- El aforo cambia únicamente al confirmar el sensor.
+- Solicitudes, confirmaciones y eventos usan identificadores únicos.
+- Fechas en UTC y visualización en `America/Santiago`.
+- Las capturas faciales temporales no se almacenan.
+- Los repositorios desacoplan la lógica de DynamoDB.
 
-## Entidades
+## Entidades lógicas
 
-### Persona
+| Entidad | Función |
+|:---|:---|
+| `Person` | Identidad y estado general |
+| `Card` | RFID, propietario y estado |
+| `BiometricProfile` | Referencia restringida; nunca la captura |
+| `Visitor` | Permiso diario y guardia |
+| `AccessRequest` | Flujo activo |
+| `AccessEvent` | Hecho y código de resultado |
+| `Presence` | Dentro/fuera |
+| `Occupancy` | Aforo por ubicación |
+| `AccessPolicy` | Reglas de acceso |
+| `Location` | Oficina o zona |
+| `Device` | Torniquete o simulador |
+| `User` | Guardia o administrador |
+| `PrivacyConsent` | Evidencia cuando corresponda |
+| `RetentionPolicy` | Plazo y acción final |
 
-```json
-{
-  "personId": "PER-001",
-  "name": "Usuario de prueba",
-  "type": "EMPLOYEE",
-  "presenceStatus": "OUTSIDE",
-  "active": true,
-  "createdAt": "2026-09-03T16:00:00Z"
-}
-```
+Son entidades conceptuales; no obligan a crear una tabla DynamoDB por entidad.
 
-### Tarjeta
-
-```json
-{
-  "cardUid": "01:02:03:04",
-  "personId": "PER-001",
-  "status": "ACTIVE",
-  "reportedLostAt": null
-}
-```
-
-### Visitante
-
-```json
-{
-  "visitorId": "VIS-001",
-  "name": "Visitante de prueba",
-  "hostPersonId": "PER-001",
-  "reason": "Reunión",
-  "validFrom": "2026-09-03T13:00:00Z",
-  "validUntil": "2026-09-03T21:00:00Z",
-  "authorizedBy": "USR-GUARD-01",
-  "status": "AUTHORIZED"
-}
-```
-
-### Solicitud de acceso
+## Ejemplos
 
 ```json
 {
   "requestId": "REQ-001",
-  "turnstileId": "TORNIQUETE-01",
-  "cardUid": "01:02:03:04",
   "personId": "PER-001",
+  "cardUid": "01:02:03:04",
+  "source": "WOKWI",
+  "deviceId": "TURNSTILE-01",
+  "locationId": "OFFICE-01",
   "direction": "ENTRY",
-  "status": "PENDING_FACE",
-  "expiresAt": "2026-09-03T16:00:20Z"
+  "state": "PENDING_FACE",
+  "createdAt": "2026-09-04T16:00:00Z",
+  "expiresAt": "2026-09-04T16:05:00Z"
 }
 ```
-
-### Evento
 
 ```json
 {
   "eventId": "EVT-001",
   "requestId": "REQ-001",
-  "personId": "PER-001",
-  "direction": "ENTRY",
-  "result": "AUTHORIZED",
-  "reason": "ACCESS_CONFIRMED",
-  "method": "RFID_AND_FACE",
-  "turnstileId": "TORNIQUETE-01",
-  "createdAt": "2026-09-03T16:00:10Z"
-}
-```
-
-### Aforo
-
-```json
-{
-  "locationId": "OFICINA-01",
-  "currentOccupancy": 12,
-  "maximumCapacity": 25,
-  "updatedAt": "2026-09-03T16:00:10Z"
+  "eventType": "ACCESS_REJECTED",
+  "reasonCode": "ALREADY_INSIDE",
+  "occurredAt": "2026-09-04T16:00:05Z",
+  "deviceId": "TURNSTILE-01",
+  "locationId": "OFFICE-01",
+  "retentionUntil": "2026-12-03T16:00:05Z"
 }
 ```
 
 ## Valores controlados
 
-### Estado de presencia
-
-- `OUTSIDE`: puede solicitar entrada.
-- `INSIDE`: puede solicitar salida.
-- `UNKNOWN`: requiere revisión manual.
-
-### Estado de tarjeta
-
-- `ACTIVE`
-- `BLOCKED`
-- `LOST`
-- `EXPIRED`
-
-### Estado de solicitud
-
-- `PENDING_FACE`
-- `VALIDATING`
-- `AUTHORIZED`
-- `REJECTED`
-- `CROSSED`
-- `EXPIRED`
+- Tarjeta: `ACTIVE`, `BLOCKED`, `LOST`, `EXPIRED`.
+- Presencia: `OUTSIDE`, `INSIDE`, `UNKNOWN`.
+- Proveedor: `MOCK`, `REKOGNITION`.
+- Fuente: `WEB_SIMULATOR`, `WOKWI`, `PHYSICAL_READER`.
+- Solicitudes: [estados-acceso.md](estados-acceso.md).
 
 ## Consistencia
 
-La confirmación del cruce deberá actualizar conjuntamente el movimiento, el estado de presencia y el aforo. DynamoDB permite aplicar escrituras condicionales y transacciones para impedir que dos solicitudes modifiquen incorrectamente el mismo estado.
+Confirmar el sensor actualizará atómicamente solicitud, evento, presencia, aforo y contador diario si se materializa. Una confirmación repetida devolverá el resultado anterior.
+
+Los plazos están en [cumplimiento-legal.md](cumplimiento-legal.md); son configurables y no plazos legales obligatorios.
