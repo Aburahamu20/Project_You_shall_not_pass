@@ -16,3 +16,9 @@
 - [Cumplimiento legal](cumplimiento-legal.md)
 - [Costos y migración AWS](costos-y-migracion-aws.md)
 - [Contrato OpenAPI](openapi.yaml)
+
+## Implementación y colaboración
+
+- [Stack tecnológico](stack-tecnologico.md)
+- [Plan de implementación](plan-implementacion.md)
+- [Cómo colaborar](../CONTRIBUTING.md)
