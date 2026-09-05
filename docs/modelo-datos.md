@@ -71,6 +71,6 @@ Son entidades conceptuales; no obligan a crear una tabla DynamoDB por entidad.
 
 ## Consistencia
 
-Confirmar el sensor actualizará atómicamente solicitud, evento, presencia, aforo y contador diario si se materializa. Una confirmación repetida devolverá el resultado anterior.
+La confirmación del sensor actualizará atómicamente la solicitud, el evento, la presencia, el aforo y el contador diario cuando se concrete el cruce. Una confirmación repetida devolverá el resultado anterior.
 
-Los plazos están en [cumplimiento-legal.md](cumplimiento-legal.md); son configurables y no plazos legales obligatorios.
+Los plazos están en [cumplimiento-legal.md](cumplimiento-legal.md); son configurables y no son plazos legales obligatorios.
