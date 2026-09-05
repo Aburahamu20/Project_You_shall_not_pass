@@ -8,7 +8,7 @@
 | CP-04 | Tarjeta perdida | `CARD_LOST` |
 | CP-05 | Segunda entrada | `ALREADY_INSIDE` |
 | CP-06 | Salida normal | Disminuir aforo |
-| CP-07 | Salida estando fuera | `ALREADY_OUTSIDE` |
+| CP-07 | Salida de una persona que figura fuera | `ALREADY_OUTSIDE` |
 | CP-08 | Aforo lleno | `CAPACITY_FULL` |
 | CP-09 | Autorización sin cruce | Vencer sin cambiar aforo |
 | CP-10 | Visitante vigente | Autorizar |
@@ -18,7 +18,7 @@
 | CP-14 | Método alternativo | Autorizar con trazabilidad |
 | CP-15 | Doble confirmación | Cambiar aforo una sola vez |
 | CP-16 | Dos entradas simultáneas | Una sola solicitud activa |
-| CP-17 | Dos torniquetes y último cupo | Autorizar uno |
+| CP-17 | Dos torniquetes con un último cupo | Autorizar uno |
 | CP-18 | Reintento HTTP | Devolver resultado previo |
 | CP-19 | Solicitud vencida confirmada | No alterar estado |
 | CP-20 | Guardia cambia aforo | `FORBIDDEN` |
