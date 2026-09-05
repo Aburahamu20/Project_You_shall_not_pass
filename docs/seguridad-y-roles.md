@@ -23,7 +23,7 @@ Cognito y Lambda comprobarán los permisos. Ocultar botones no será suficiente.
 
 - `MOCK` será el modo inicial.
 - La captura real se mantendrá solo durante la comparación.
-- No irá a DynamoDB, eventos, logs o GitHub.
+- No se almacenará en DynamoDB, eventos, logs ni GitHub.
 - El guardia verá el resultado, no el perfil biométrico.
 - Si se usan personas reales se documentarán finalidad, base aplicable, consentimiento cuando corresponda, proveedor y eliminación.
 - Existirá un método alternativo.
