@@ -10,6 +10,7 @@
 | Cognito | Usuarios y grupos | Otro proveedor |
 | Proveedor facial intercambiable | Avanzar sin Rekognition | Otro motor |
 | `MOCK` inicial | Evitar costo y biometría real | Rekognition |
+| API Gateway HTTP API | Menor costo por solicitud si cubre los requisitos | REST API solo si se justifica |
 | API v1 + OpenAPI | Contrato común para el equipo | GraphQL |
 | Repositorios | Separar dominio y DynamoDB | Otro almacenamiento |
 | Eventos compensatorios | Mantener auditoría | No editar directo |
@@ -25,6 +26,10 @@
 - TTL para solicitudes.
 - Rekognition solo en demostración controlada.
 - Eliminar recursos cuando no se utilicen si el laboratorio no lo hace.
+- Mantener un límite interno de USD 10 y revisar el saldo después de cada jornada.
+- Preparar respaldo cuando queden USD 15; detener pruebas costosas al llegar a USD 10.
+
+Detalles: [costos-y-migracion-aws.md](costos-y-migracion-aws.md).
 
 ## Expansión
 

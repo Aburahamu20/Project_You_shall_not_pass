@@ -52,6 +52,9 @@ flowchart TD
 
 ## API v1
 
+Se preferirá **API Gateway HTTP API** si las funciones de autenticación permitidas por Learner Lab son suficientes. Su precio público inicial es menor que el de REST API. REST API se utilizará solo si una necesidad técnica concreta lo justifica.
+
+
 | Método | Ruta |
 |:---|:---|
 | `POST` | `/api/v1/access-requests` |
@@ -75,3 +78,7 @@ Contrato: [openapi.yaml](openapi.yaml).
 - AWS SAM o CloudFormation según permisos.
 - Sin EC2, RDS ni NAT Gateway inicialmente.
 - `FACE_PROVIDER=MOCK`, TTL de solicitudes y retención corta de logs para cuidar créditos.
+- Presupuesto interno máximo recomendado: USD 10 para desarrollo y demostración.
+- Respaldo de infraestructura, configuración y datos ficticios antes de cambiar de cuenta.
+
+Plan detallado: [costos-y-migracion-aws.md](costos-y-migracion-aws.md).

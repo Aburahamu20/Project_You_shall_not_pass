@@ -449,6 +449,7 @@ Project_You_Shall_Not_Pass/
 │   ├── decisiones-tecnicas.md
 │   ├── estados-acceso.md
 │   ├── cumplimiento-legal.md
+│   ├── costos-y-migracion-aws.md
 │   └── openapi.yaml
 ├── frontend/
 │   └── README.md
@@ -527,7 +528,7 @@ El Diseño 1.1 mantiene el alcance original e incorpora antes de programar:
 - Datos ficticios por defecto, captura facial temporal y método alternativo.
 - Conservación limitada y eliminación o anonimización controlada.
 
-Documentos: [cambios](docs/cambios-diseno-1.1.md), [decisiones](docs/decisiones-tecnicas.md), [estados](docs/estados-acceso.md), [cumplimiento legal](docs/cumplimiento-legal.md) y [OpenAPI](docs/openapi.yaml).
+Documentos: [cambios](docs/cambios-diseno-1.1.md), [decisiones](docs/decisiones-tecnicas.md), [estados](docs/estados-acceso.md), [cumplimiento legal](docs/cumplimiento-legal.md), [costos y migración AWS](docs/costos-y-migracion-aws.md) y [OpenAPI](docs/openapi.yaml).
 
 > Es una simulación académica de control de acceso, no un sistema certificado de asistencia laboral ni una certificación legal.
 
