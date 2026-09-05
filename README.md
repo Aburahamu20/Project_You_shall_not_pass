@@ -27,8 +27,8 @@
 | **Simulación electrónica** | Wokwi con ESP32, RFID, pantalla, luces, sensor y servomotor |
 | **Servicios cloud previstos** | Amazon Cognito, API Gateway, Lambda, DynamoDB, S3 y CloudWatch |
 | **Entorno AWS inicial** | AWS Academy Learner Lab de Duoc UC |
-| **Integrantes** | Abraham Castro Romero · Sebastian Fuentes Cortes · Lisandra Gonzalez Hernandez · Felipe Murua Lobos · Barbara Saavedra Fernandez |
-| **Docente** | Marcos Antonio Perelli Henriquez |
+| **Integrantes** | Abraham Castro Romero · Sebastián Fuentes Cortés · Lisandra González Hernández · Felipe Murúa Lobos · Bárbara Saavedra Fernández |
+| **Docente** | Marcos Antonio Perelli Henríquez |
 | **Fecha** | Septiembre 2026 |
 
 </div>

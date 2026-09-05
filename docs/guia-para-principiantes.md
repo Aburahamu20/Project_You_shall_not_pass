@@ -61,7 +61,7 @@ La versión principal se llama `main`. Para trabajar sin romperla se crean ramas
 
 Visual Studio Code es el editor en el que escribiremos el código.
 
-Se parece a Word, pero está preparado para programación. Desde allí podremos abrir las carpetas del repositorio, modificar archivos y probar la aplicación.
+Se parece a Word, pero está preparado para programar. Desde allí podremos abrir las carpetas del repositorio, modificar archivos y probar la aplicación.
 
 Visual Studio Code no es la aplicación final ni almacena los datos en Internet. Es nuestro espacio de trabajo.
 
@@ -115,7 +115,7 @@ Durante las pruebas utilizaremos UID ficticios.
 
 AWS es una plataforma de servicios en Internet.
 
-En este proyecto actuará como el cerebro central que comunica los computadores. Recibirá las solicitudes, revisará las reglas y guardará la información.
+En este proyecto actuará como el cerebro central que conecta los computadores. Recibirá las solicitudes, revisará las reglas y guardará la información.
 
 Gracias a AWS, un compañero podrá usar Wokwi en su computador mientras otro observa el dashboard desde otro lugar.
 

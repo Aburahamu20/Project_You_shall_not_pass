@@ -12,6 +12,6 @@ El ESP32 llamará `/api/v1` con `source=WOKWI`, `deviceId`, `locationId` y direc
 4. Consultar el mismo `requestId`.
 5. Habilitar un paso solo en `AUTHORIZED`.
 6. Confirmar con clave idempotente.
-7. Volver a bloqueado.
+7. Volver al estado bloqueado.
 
 Ante error, vencimiento o pérdida de red, permanecerá bloqueado. No incluirá claves AWS ni datos personales.

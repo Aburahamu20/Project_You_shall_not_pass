@@ -7,7 +7,7 @@ La aplicación web, Wokwi y AWS se conectarán mediante una API versionada. Las 
 ```mermaid
 flowchart TD
     WEB["Aplicación web"] --> API["API Gateway /api/v1"]
-    WOK["ESP32 virtual Wokwi"] --> API
+    WOK["ESP32 virtual en Wokwi"] --> API
     API --> LAM["Lambda: casos de uso"]
     LAM --> POL["Políticas de acceso"]
     POL --> REP["Repositorios"]
@@ -34,10 +34,10 @@ flowchart TD
 ### AWS
 
 - Autenticar y autorizar por permisos.
-- Aplicar tarjeta, rostro, permisos, anti-passback, aforo y privacidad.
+- Aplicar las reglas de tarjeta, rostro, permisos, anti-passback, aforo y privacidad.
 - Confirmar el cruce de forma idempotente y transaccional.
 - Emitir eventos sin fotografías ni secretos.
-- Ejecutar vencimiento y conservación.
+- Gestionar vencimientos y políticas de conservación.
 
 ## Capas del backend
 
@@ -71,7 +71,7 @@ Contrato: [openapi.yaml](openapi.yaml).
 
 ## Sincronización, tiempo y portabilidad
 
-- Polling inicial cada uno o dos segundos; WebSocket queda como mejora.
+- Polling inicial cada uno o dos segundos; el uso de WebSocket queda como mejora futura.
 - `requestId` e `Idempotency-Key` evitan duplicados.
 - Fechas en UTC y visualización en `America/Santiago`.
 - Variables para región, URL, tablas y proveedor.
