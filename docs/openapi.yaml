@@ -1,0 +1,275 @@
+openapi: 3.0.3
+info:
+  title: Project You Shall Not Pass API
+  version: 1.1.0
+  description: Contrato conceptual de la simulación de acceso.
+servers:
+  - url: https://example.execute-api.us-east-1.amazonaws.com/api/v1
+security:
+  - bearerAuth: []
+paths:
+  /access-requests:
+    post:
+      summary: Crear solicitud RFID
+      security: []
+      operationId: createAccessRequest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAccessRequest'
+      responses:
+        '201':
+          description: Creada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /access-requests/{requestId}:
+    get:
+      summary: Consultar solicitud
+      security: []
+      operationId: getAccessRequest
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+      responses:
+        '200':
+          description: Estado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /access-requests/{requestId}/face-verification:
+    post:
+      summary: Validación facial temporal
+      operationId: verifyFace
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FaceVerification'
+      responses:
+        '200':
+          description: Resultado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessRequest'
+        '410':
+          $ref: '#/components/responses/Expired'
+  /access-requests/{requestId}/confirm:
+    post:
+      summary: Confirmar sensor
+      security: []
+      operationId: confirmCrossing
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Confirmada o resultado previo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /occupancy:
+    get:
+      summary: Consultar aforo
+      operationId: getOccupancy
+      parameters:
+        - name: locationId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Aforo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Occupancy'
+  /presence:
+    get:
+      summary: Consultar presencia
+      operationId: getPresence
+      responses:
+        '200':
+          description: Lista según rol
+  /events:
+    get:
+      summary: Consultar eventos
+      operationId: getEvents
+      responses:
+        '200':
+          description: Eventos filtrados
+  /visitors:
+    post:
+      summary: Crear visitante diario
+      operationId: createVisitor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateVisitor'
+      responses:
+        '201':
+          description: Creado
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /cards/{cardUid}/report-lost:
+    post:
+      summary: Reportar tarjeta perdida
+      operationId: reportLostCard
+      parameters:
+        - name: cardUid
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Bloqueada
+        '403':
+          $ref: '#/components/responses/Forbidden'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    RequestId:
+      name: requestId
+      in: path
+      required: true
+      schema:
+        type: string
+  responses:
+    Conflict:
+      description: Conflicto
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: No encontrado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Expired:
+      description: Vencida
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Permiso insuficiente
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+  schemas:
+    CreateAccessRequest:
+      type: object
+      required: [cardUid, direction, source, deviceId, locationId]
+      properties:
+        cardUid:
+          type: string
+        direction:
+          type: string
+          enum: [ENTRY, EXIT]
+        source:
+          type: string
+          enum: [WEB_SIMULATOR, WOKWI, PHYSICAL_READER]
+        deviceId:
+          type: string
+        locationId:
+          type: string
+    FaceVerification:
+      type: object
+      required: [provider]
+      properties:
+        provider:
+          type: string
+          enum: [MOCK, REKOGNITION]
+        mockIdentityId:
+          type: string
+          description: Solo pruebas ficticias.
+        imageBase64:
+          type: string
+          format: byte
+          writeOnly: true
+          description: Captura temporal; no almacenar ni registrar.
+    AccessRequest:
+      type: object
+      required: [requestId, state, createdAt, expiresAt]
+      properties:
+        requestId:
+          type: string
+        state:
+          type: string
+          enum: [PENDING_FACE, VALIDATING, AUTHORIZED, CONFIRMED, REJECTED, EXPIRED, CANCELLED]
+        reasonCode:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+    Occupancy:
+      type: object
+      properties:
+        locationId:
+          type: string
+        current:
+          type: integer
+          minimum: 0
+        maximum:
+          type: integer
+          minimum: 1
+        status:
+          type: string
+          enum: [AVAILABLE, NEAR_CAPACITY, FULL]
+    CreateVisitor:
+      type: object
+      required: [displayName, hostPersonId, reason, validUntil]
+      properties:
+        displayName:
+          type: string
+        hostPersonId:
+          type: string
+        reason:
+          type: string
+        validUntil:
+          type: string
+          format: date-time
+    ErrorResponse:
+      type: object
+      required: [code, message, requestId]
+      properties:
+        code:
+          type: string
+          example: ALREADY_INSIDE
+        message:
+          type: string
+        requestId:
+          type: string

@@ -1,23 +1,24 @@
 # Backend
 
-Esta carpeta contendrá las funciones AWS Lambda y la lógica del sistema.
+Contendrá las funciones Lambda y la lógica del dominio.
 
-## Funciones previstas
+## Módulos
 
-- Crear solicitud de acceso.
-- Validar RFID y estado de tarjeta.
-- Asociar y validar rostro.
-- Aplicar permisos y anti-passback.
-- Autorizar un único paso.
-- Confirmar el cruce y actualizar aforo.
-- Administrar visitantes temporales.
-- Consultar presencia e historial.
-- Registrar auditorías y rechazos.
+- Controladores `/api/v1`.
+- Casos de uso.
+- Políticas de acceso.
+- Proveedores `MOCK` y `REKOGNITION`.
+- Repositorios desacoplados.
+- Eventos, errores, retención y anonimización.
 
-## Reglas de desarrollo
+## Reglas
 
-- La lógica no dependerá de nombres fijos de tablas.
-- Las funciones recibirán configuración mediante variables de entorno.
-- Las operaciones de confirmación deberán ser idempotentes.
-- El acceso a DynamoDB utilizará `LabRole` en Learner Lab.
-- Los errores deberán registrarse sin exponer información sensible.
+- Variables de entorno; `FACE_PROVIDER=MOCK` inicialmente.
+- Confirmaciones idempotentes y transaccionales.
+- Una solicitud activa por persona y dispositivo.
+- Tiempo en UTC.
+- Sin fotografías o secretos en logs.
+- Permisos validados en backend.
+- Fallo seguro: torniquete bloqueado.
+
+Contrato: [../docs/openapi.yaml](../docs/openapi.yaml).

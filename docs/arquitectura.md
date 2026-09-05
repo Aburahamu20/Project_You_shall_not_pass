@@ -1,18 +1,18 @@
-# Arquitectura prevista
+# Arquitectura prevista — Diseño 1.1
 
 ## Propósito
 
-Este documento define cómo se comunicarán la aplicación web, Wokwi y AWS. La arquitectura se mantendrá desacoplada para que cada parte pueda desarrollarse y probarse por separado.
-
-## Componentes
+La aplicación web, Wokwi y AWS se conectarán mediante una API versionada. Las reglas serán independientes de Rekognition, DynamoDB y la cuenta de Learner Lab.
 
 ```mermaid
 flowchart TD
-    WEB["Aplicación web"] --> API["API Gateway"]
-    WOK["ESP32 virtual en Wokwi"] --> API
-    API --> LAM["Funciones Lambda"]
-    LAM --> DB["DynamoDB"]
-    LAM --> REC["Rekognition opcional"]
+    WEB["Aplicación web"] --> API["API Gateway /api/v1"]
+    WOK["ESP32 virtual Wokwi"] --> API
+    API --> LAM["Lambda: casos de uso"]
+    LAM --> POL["Políticas de acceso"]
+    POL --> REP["Repositorios"]
+    REP --> DB["DynamoDB"]
+    LAM --> FAC["Proveedor MOCK o Rekognition"]
     COG["Cognito"] --> API
     LAM --> LOG["CloudWatch"]
 ```
@@ -21,52 +21,64 @@ flowchart TD
 
 ### Aplicación web
 
-- Capturar o simular el rostro.
-- Mostrar las solicitudes pendientes.
-- Entregar los paneles de guardia y administrador.
-- Consultar aforo, personas presentes y movimientos.
-- Registrar visitantes y reportar tarjetas perdidas.
+- Simular RFID, cámara, dashboards y método alternativo.
+- Eliminar la captura local después de la comparación.
+- Mostrar solo las funciones permitidas a cada rol.
 
 ### Wokwi
 
-- Leer tarjetas virtuales con MFRC522.
-- Enviar el UID, dirección e identificador del torniquete.
-- Consultar el resultado de la solicitud.
-- Mover el servomotor únicamente cuando AWS autorice.
-- Confirmar el cruce mediante un sensor virtual.
+- Enviar `source=WOKWI`, UID, `deviceId`, `locationId` y dirección.
+- Consultar una solicitud existente, habilitar un paso en `AUTHORIZED` y confirmar el sensor.
+- Mantener el torniquete bloqueado ante fallas.
 
 ### AWS
 
-- Autenticar a guardias y administradores.
-- Relacionar RFID, rostro y persona.
-- Aplicar permisos, anti-passback y aforo.
-- Generar autorizaciones de un solo uso y corta duración.
-- Guardar eventos y mantener el estado actual.
+- Autenticar y autorizar por permisos.
+- Aplicar tarjeta, rostro, permisos, anti-passback, aforo y privacidad.
+- Confirmar el cruce de forma idempotente y transaccional.
+- Emitir eventos sin fotografías ni secretos.
+- Ejecutar vencimiento y conservación.
 
-## API prevista
+## Capas del backend
 
-| Método | Ruta conceptual | Uso |
-|:---|:---|:---|
-| `POST` | `/access/request` | Crear solicitud después de leer RFID |
-| `POST` | `/access/{id}/face` | Asociar validación facial |
-| `GET` | `/access/{id}` | Consultar autorización o rechazo |
-| `POST` | `/access/{id}/confirm` | Confirmar cruce del sensor |
-| `GET` | `/occupancy` | Obtener aforo actual |
-| `GET` | `/presence` | Consultar quién está dentro |
-| `GET` | `/events` | Consultar historial autorizado |
-| `POST` | `/visitors` | Registrar una visita temporal |
-| `POST` | `/cards/{uid}/report-lost` | Bloquear una tarjeta reportada |
+| Capa | Responsabilidad |
+|:---|:---|
+| Controladores | Solicitudes HTTP |
+| Casos de uso | Coordinación |
+| Políticas | Decisión de acceso |
+| Proveedores faciales | `MOCK` o `REKOGNITION` |
+| Repositorios | Persistencia desacoplada |
+| Auditoría | Eventos y códigos |
 
-Las rutas son preliminares y podrán ajustarse sin cambiar la separación entre frontend, backend, infraestructura y Wokwi.
+## API v1
 
-## Sincronización entre computadores
+Se preferirá **API Gateway HTTP API** si las funciones de autenticación permitidas por Learner Lab son suficientes. Su precio público inicial es menor que el de REST API. REST API se utilizará solo si una necesidad técnica concreta lo justifica.
 
-En la primera versión, la aplicación web y Wokwi consultarán el estado cada uno o dos segundos. Esta estrategia es suficiente para el prototipo y evita agregar WebSockets antes de que la lógica principal esté comprobada.
 
-## Portabilidad entre cuentas
+| Método | Ruta |
+|:---|:---|
+| `POST` | `/api/v1/access-requests` |
+| `POST` | `/api/v1/access-requests/{id}/face-verification` |
+| `GET` | `/api/v1/access-requests/{id}` |
+| `POST` | `/api/v1/access-requests/{id}/confirm` |
+| `GET` | `/api/v1/occupancy` |
+| `GET` | `/api/v1/presence` |
+| `GET` | `/api/v1/events` |
+| `POST` | `/api/v1/visitors` |
+| `POST` | `/api/v1/cards/{uid}/report-lost` |
 
-- No incluir números de cuenta ni URL fijas dentro de la lógica.
-- Utilizar variables como `AWS_REGION`, `API_BASE_URL` y nombres de tablas.
-- Definir los recursos futuros mediante CloudFormation o AWS SAM.
-- Mantener datos ficticios en archivos independientes.
-- Exportar los datos necesarios antes de agotar los créditos.
+Contrato: [openapi.yaml](openapi.yaml).
+
+## Sincronización, tiempo y portabilidad
+
+- Polling inicial cada uno o dos segundos; WebSocket queda como mejora.
+- `requestId` e `Idempotency-Key` evitan duplicados.
+- Fechas en UTC y visualización en `America/Santiago`.
+- Variables para región, URL, tablas y proveedor.
+- AWS SAM o CloudFormation según permisos.
+- Sin EC2, RDS ni NAT Gateway inicialmente.
+- `FACE_PROVIDER=MOCK`, TTL de solicitudes y retención corta de logs para cuidar créditos.
+- Presupuesto interno máximo recomendado: USD 10 para desarrollo y demostración.
+- Respaldo de infraestructura, configuración y datos ficticios antes de cambiar de cuenta.
+
+Plan detallado: [costos-y-migracion-aws.md](costos-y-migracion-aws.md).

@@ -1,60 +1,49 @@
-# Seguridad y roles
+# Seguridad, privacidad y roles — Diseño 1.1
 
-## Roles
+## Permisos
 
-### Guardia
+| Función | Guardia | Administrador |
+|:---|:---:|:---:|
+| Ver aforo y presencia | Sí | Sí |
+| Ver solicitudes y alertas | Sí | Sí |
+| Crear/finalizar visita diaria | Sí | Sí |
+| Reportar tarjeta perdida | Sí | Sí |
+| Solicitar corrección con motivo | Sí | Sí |
+| Crear personas permanentes | No | Sí |
+| Asignar credenciales o perfiles | No | Sí |
+| Cambiar políticas y aforo | No | Sí |
+| Administrar usuarios/dispositivos | No | Sí |
+| Auditoría completa | No | Sí |
+| Ver capturas faciales | No | No |
+| Borrar eventos desde dashboard | No | No |
 
-Puede:
+Cognito y Lambda comprobarán los permisos. Ocultar botones no será suficiente.
 
-- Consultar aforo y presencia actual.
-- Ver solicitudes recientes y alertas.
-- Registrar, autorizar y finalizar visitas del día.
-- Reportar tarjetas perdidas.
-- Solicitar una corrección manual indicando un motivo.
+## Biometría y privacidad
 
-No puede:
-
-- Crear empleados permanentes.
-- Asignar rostros o credenciales permanentes.
-- Cambiar capacidad o reglas generales.
-- Administrar cuentas de otros usuarios.
-- Alterar o eliminar el historial.
-
-### Administrador
-
-Puede realizar las acciones del guardia y además:
-
-- Crear o desactivar personas.
-- Asignar y bloquear credenciales.
-- Administrar permisos permanentes.
-- Configurar aforo y torniquetes.
-- Administrar cuentas y roles.
-- Consultar auditorías completas.
-
-## Aplicación de permisos
-
-La aplicación podrá ocultar opciones según el rol, pero AWS Lambda también deberá comprobar los permisos en el backend. Nunca se aceptará una acción privilegiada solamente porque proviene del dashboard.
+- `MOCK` será el modo inicial.
+- La captura real se mantendrá solo durante la comparación.
+- No irá a DynamoDB, eventos, logs o GitHub.
+- El guardia verá el resultado, no el perfil biométrico.
+- Si se usan personas reales se documentarán finalidad, base aplicable, consentimiento cuando corresponda, proveedor y eliminación.
+- Existirá un método alternativo.
 
 ## Auditoría
 
-Las siguientes operaciones generarán un evento:
+Se registrarán solicitudes, validaciones, autorizaciones, rechazos, vencimientos, cruces, visitas, tarjetas, correcciones, cambios administrativos y procesos de eliminación o anonimización.
 
-- Acceso autorizado.
-- Acceso rechazado y motivo.
-- Autorización vencida sin cruce.
-- Creación o finalización de visitante.
-- Bloqueo o reporte de tarjeta.
-- Corrección manual de presencia.
-- Cambio administrativo de permisos o capacidad.
+Los logs no incluirán imágenes, tokens, claves ni documentos completos.
 
-## Datos biométricos
+## Correcciones
 
-Durante el prototipo se utilizarán identidades ficticias. Si se incorporan rostros reales posteriormente, el equipo deberá definir consentimiento, acceso limitado, tiempo de conservación y eliminación segura antes de capturarlos.
+El guardia solicitará una corrección indicando motivo. Si se aprueba, el backend creará un evento compensatorio; no se sobrescribirá el evento original.
 
-## Secretos y configuración
+## Secretos y fallo seguro
 
-- No subir archivos `.env`.
-- No incluir claves de acceso de AWS.
-- No incluir contraseñas ni tokens en Wokwi.
-- No hacer pública información real de empleados o visitantes.
-- Mantener un archivo `.env.example` únicamente con nombres de variables.
+- Sin archivos `.env`, claves AWS, contraseñas o tokens.
+- Solo nombres de variables en `.env.example`.
+- HTTPS y permisos mínimos.
+- El torniquete queda bloqueado ante fallas de autenticación, red o backend.
+- Solo datos ficticios en el repositorio público.
+
+Más detalles: [cumplimiento-legal.md](cumplimiento-legal.md).
