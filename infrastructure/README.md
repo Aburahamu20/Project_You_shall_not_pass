@@ -11,10 +11,11 @@ Contendrá AWS SAM o CloudFormation compatible con Learner Lab.
 - CloudWatch con retención corta.
 - S3 privado y hosting si corresponde.
 - Rekognition opcional y desactivado por defecto.
+- Endpoints para configuración Edge, estado y sincronización idempotente.
 
 ## Portabilidad, costo y privacidad
 
-Sin ARN, cuenta o URL fijos; sin EC2, RDS ni NAT Gateway inicialmente. Se parametrizarán región, ambiente, tablas y proveedor. Las plantillas definirán cifrado, retención y eliminación, sin almacenamiento permanente de capturas faciales.
+Sin ARN, cuenta o URL fijos; sin EC2, RDS ni NAT Gateway inicialmente. Se parametrizarán región, ambiente, tablas, proveedor facial y vigencia offline. Las plantillas definirán cifrado, retención y eliminación, sin almacenamiento permanente de capturas faciales.
 
 
 ## Respaldo entre cuentas

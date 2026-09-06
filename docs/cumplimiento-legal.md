@@ -35,6 +35,7 @@ Si excepcionalmente se usan personas reales, antes deberán definirse finalidad,
 - No registrar imágenes o documentos completos.
 - Mostrar al guardia solo el resultado.
 - Separar identidad, perfil biométrico y auditoría.
+- Aplicar las mismas medidas a AWS, al simulador Edge y a una Raspberry física.
 - Evitar RUT en demostraciones.
 - Ofrecer RFID más guardia, código temporal o validación manual auditada.
 
@@ -48,6 +49,7 @@ Si excepcionalmente se usan personas reales, antes deberán definirse finalidad,
 | Eventos | 90 días iniciales | Eliminar o anonimizar |
 | CloudWatch | Periodo corto | Eliminar automáticamente |
 | Perfil real de prueba | Hasta terminar prueba | Eliminar referencia |
+| Copia Edge de perfil autorizado | Máximo necesario para continuidad | Revocar o eliminar mediante sincronización |
 
 Son decisiones del prototipo, no plazos legales obligatorios.
 
@@ -66,6 +68,12 @@ El guardia verá información operacional; el administrador configurará el sist
 - Eliminar referencias y recursos al terminar.
 
 Referencia: [protección de datos en Rekognition](https://docs.aws.amazon.com/rekognition/latest/dg/data-protection.html).
+
+## Procesamiento local y continuidad
+
+El funcionamiento offline no elimina las obligaciones de privacidad. La Raspberry o su simulador tratarán datos de acceso y representaciones faciales localmente, por lo que deberán aplicar control de acceso, minimización, eliminación, trazabilidad y protección de la base SQLite.
+
+La instantánea offline contendrá solo las personas y permisos necesarios para la ubicación. Su vigencia operacional será de 12 horas, pero el vencimiento no reemplaza la política formal de eliminación. No se copiarán contraseñas, fotografías ni auditorías históricas completas al dispositivo.
 
 ## Acceso versus asistencia
 
