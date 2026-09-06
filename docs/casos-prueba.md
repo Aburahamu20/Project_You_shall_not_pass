@@ -1,4 +1,4 @@
-# Casos de prueba previstos — Diseño 1.1
+# Casos de prueba previstos — Diseño 2.0
 
 | ID | Escenario | Resultado esperado |
 |:---|:---|:---|
@@ -25,18 +25,34 @@
 | CP-21 | Guardia consulta biometría | `FORBIDDEN` |
 | CP-22 | Sin autenticación | `UNAUTHORIZED` |
 | CP-23 | Dispositivo desconocido | `DEVICE_UNKNOWN` |
-| CP-24 | API inaccesible | Torniquete bloqueado |
+| CP-24 | AWS inaccesible con configuración vigente | Cambiar a `OFFLINE_VALID` |
 | CP-25 | Corrección manual | Evento compensatorio |
 | CP-26 | Captura procesada | No aparece en base ni logs |
 | CP-27 | Identidad ficticia | Funciona con `MOCK` |
 | CP-28 | Solicitud alcanza TTL | Eliminación controlada |
 | CP-29 | Evento cumple retención | Eliminar o anonimizar |
 | CP-30 | Cambio de consentimiento | Registrar fecha y efecto |
-| CP-31 | Wokwi y web en dos PCs | Compartir solicitud |
+| CP-31 | Edge y dashboard en dos PCs | Compartir solicitud y estado mediante AWS |
 | CP-32 | UTC mostrado en Chile | Conversión correcta |
 | CP-33 | Horario de verano | Mantener UTC correcto |
 | CP-34 | Cambio de proveedor | No cambiar políticas |
 | CP-35 | Cambio de Learner Lab | Solo configuración |
+| CP-36 | Configuración alcanza 12 horas | Cambiar a `OFFLINE_EXPIRED` |
+| CP-37 | Salida en modo restringido | Permitir salida segura y registrar |
+| CP-38 | Entrada automática con configuración vencida | Rechazar |
+| CP-39 | Tarjeta conocida durante modo offline | Aplicar permiso, rostro, presencia y aforo local |
+| CP-40 | Tarjeta desconocida durante modo offline | `CARD_UNKNOWN` |
+| CP-41 | Tarjeta bloqueada localmente | `CARD_BLOCKED` o `CARD_LOST` |
+| CP-42 | Descarga de configuración dañada | Conservar la última copia válida |
+| CP-43 | No existen cambios de configuración | Mantener versión sin descargar datos completos |
+| CP-44 | Evento offline pendiente | Persistir en SQLite tras reinicio |
+| CP-45 | Regresa AWS | Enviar pendientes y cambiar a `ONLINE` |
+| CP-46 | Evento offline reenviado | No duplicar movimiento ni aforo |
+| CP-47 | Visitante previamente sincronizado | Respetar su vigencia original |
+| CP-48 | Visitante nuevo offline | Exigir excepción de guardia con motivo |
+| CP-49 | PC captura imagen | No reconocer ni decidir en el navegador |
+| CP-50 | Rostro online | Procesar mediante `MOCK` o Rekognition en AWS |
+| CP-51 | Rostro offline | Procesar mediante `MOCK` o proveedor `LOCAL` en Edge |
 
 ## Evidencia futura
 

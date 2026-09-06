@@ -2,371 +2,241 @@
 
 ## ¿Para quién es esta guía?
 
-Para integrantes del equipo, profesores o compañeros que no conozcan AWS, Wokwi, RFID, bases de datos o aplicaciones web.
+Para integrantes, profesores o compañeros que no conozcan AWS, Raspberry Pi, RFID, bases de datos o aplicaciones web. La explicación evita detalles innecesarios y se concentra en qué hace cada parte.
 
-Aquí evitaremos las explicaciones complicadas. La idea es entender qué hace cada parte y cómo se relaciona con las demás.
+## El proyecto en una frase
 
-## El proyecto explicado en una frase
+Simularemos una oficina donde una persona presenta una tarjeta RFID y su rostro; la plataforma revisa su identidad y permiso, habilita un solo paso, confirma el cruce y actualiza el aforo.
 
-Vamos a crear una **oficina simulada** en la que una persona presenta una tarjeta, confirma su identidad y un torniquete virtual decide si puede entrar o salir.
+## Un acceso normal
 
-El sistema también contará cuántas personas están dentro y guardará un historial.
-
-## Un ejemplo cotidiano
-
-Imaginemos la entrada de una empresa:
-
-1. Una persona acerca su tarjeta.
-2. El sistema busca a quién pertenece.
-3. La persona muestra su rostro o utiliza un método alternativo.
-4. Se comprueba que tenga permiso.
-5. Se revisa que no aparezca ya dentro.
-6. Se revisa que la oficina no esté llena.
-7. Si todo está correcto, el torniquete permite un paso.
-8. Un sensor confirma que realmente cruzó.
-9. El sistema actualiza el número de personas.
-10. El guardia ve el resultado en su pantalla.
-
-Nuestro proyecto imitará todo eso sin instalar todavía un torniquete físico.
+1. La persona presenta una tarjeta.
+2. La aplicación obtiene su código RFID.
+3. La webcam captura temporalmente el rostro.
+4. La PC envía ambos datos al servicio Edge.
+5. Si AWS está disponible, la plataforma cloud procesa la solicitud.
+6. Si AWS no está disponible, el Edge usa su copia local vigente.
+7. Se revisan tarjeta, rostro, permiso, presencia y aforo.
+8. El torniquete permite un solo paso o permanece bloqueado.
+9. El sensor confirma si la persona realmente cruzó.
+10. El sistema registra el resultado y actualiza el aforo.
 
 ## Las partes principales
 
 ```mermaid
 flowchart TD
-    P["Persona presenta tarjeta"] --> S["Web o Wokwi simula la entrada"]
-    S --> A["AWS revisa las reglas"]
-    A --> R["Torniquete responde"]
-    R --> D["Dashboard actualiza la información"]
+    PERSONA["Persona presenta RFID y rostro"] --> WEB["Aplicación web captura"]
+    WEB --> EDGE["Raspberry Pi o simulador Edge coordina"]
+    EDGE -->|"Con AWS"| CLOUD["AWS procesa y guarda"]
+    EDGE -->|"Sin AWS"| LOCAL["SQLite y reglas locales"]
+    CLOUD --> TURN["Edge controla el torniquete"]
+    LOCAL --> TURN
 ```
 
-## ¿Qué es cada programa o servicio?
+## GitHub: la carpeta compartida
 
-### GitHub: la carpeta compartida del equipo
+GitHub guarda el código y la documentación. Además, registra quién cambió cada archivo y permite revisar los cambios mediante Pull Requests antes de incorporarlos a `main`.
 
-GitHub es el lugar donde se guarda el proyecto.
+## Visual Studio Code: donde programamos
 
-Se parece a una carpeta compartida, pero además recuerda quién cambió cada archivo y permite revisar los cambios antes de aceptarlos.
+Visual Studio Code es el editor utilizado para escribir y probar el proyecto. No es la aplicación final ni guarda los registros de la oficina.
 
-En este proyecto guardará:
+## Aplicación web: la pantalla
 
-- El código de la aplicación web.
-- El código de AWS.
-- El circuito de Wokwi.
-- Los documentos.
-- Los cambios realizados por cada integrante.
+La aplicación se construye con React, Vite y TypeScript. Tendrá:
 
-La versión principal se llama `main`. Para trabajar sin romperla se crean ramas y Pull Requests.
+- terminal de RFID y webcam;
+- torniquete virtual;
+- panel limitado del guardia;
+- dashboard administrativo;
+- aforo, personas presentes y eventos;
+- estado online/offline;
+- última sincronización y alertas.
 
-### Visual Studio Code: el lugar donde programamos
+La aplicación captura y muestra, pero no reconoce a una persona ni toma la decisión de abrir.
 
-Visual Studio Code es el editor en el que escribiremos el código.
+## Raspberry Pi: el controlador local
 
-Se parece a Word, pero está preparado para programar. Desde allí podremos abrir las carpetas del repositorio, modificar archivos y probar la aplicación.
+Una Raspberry Pi es un computador pequeño que puede ejecutar Linux, utilizar una cámara, conectarse a un lector RFID, guardar datos locales y controlar sensores o actuadores.
 
-Visual Studio Code no es la aplicación final ni almacena los datos en Internet. Es nuestro espacio de trabajo.
+En este proyecto será la puerta de enlace del acceso:
 
-### Aplicación web: la pantalla principal
+- recibe la información de la aplicación;
+- consulta AWS cuando está disponible;
+- aplica reglas locales durante una interrupción;
+- controla el torniquete;
+- confirma el sensor;
+- sincroniza lo ocurrido al volver AWS.
 
-Será una página que podrá abrirse desde el navegador.
+Al comienzo no necesitamos comprarla. Ejecutaremos en un computador un servicio que imita su comportamiento. Luego podremos trasladarlo a una Raspberry Pi 4.
 
-Representará:
+## Servicio Edge: el programa de la Raspberry
 
-- El lector RFID cuando no usemos Wokwi.
-- La cámara o identidad facial ficticia.
-- El torniquete virtual.
-- El panel del guardia.
-- El dashboard del administrador.
-- El aforo y el historial.
+“Edge” significa que una parte del procesamiento ocurre cerca del dispositivo, en lugar de depender siempre de internet. El servicio Edge funcionará en la Raspberry o en el simulador del computador.
 
-La aplicación se programará en Visual Studio Code, pero se utilizará desde Chrome, Edge u otro navegador.
+La Raspberry no es una segunda base oficial. AWS continúa siendo la fuente principal; Edge conserva una copia controlada para emergencias.
 
-### Wokwi: la maqueta electrónica virtual
+## RFID: la tarjeta
 
-Wokwi permite colocar componentes electrónicos en una pantalla y hacer que funcionen como si fueran reales.
+RFID permite leer un identificador llamado UID cuando una tarjeta se acerca al lector. El UID no contiene el nombre: se utiliza para buscar a qué persona pertenece. En las pruebas usaremos códigos ficticios.
 
-En nuestro proyecto mostrará:
+## AWS: la plataforma central
 
-- Un ESP32.
-- Un lector RFID.
-- Luces roja, amarilla y verde.
-- Una pantalla pequeña.
-- Un servomotor que representa el torniquete.
-- Un sensor o botón que confirma el paso.
+AWS es un conjunto de servicios cloud. En el modo online será la plataforma que autentica usuarios, aplica las reglas, compara el rostro y guarda la información compartida.
 
-Es como tener la maqueta electrónica sin comprar los componentes.
+### API Gateway
 
-### ESP32: el pequeño computador del torniquete
+Es la entrada HTTPS del backend. Recibe solicitudes del servicio Edge y el dashboard y las entrega a Lambda.
 
-El ESP32 es una placa electrónica que puede leer sensores, controlar luces y conectarse a Internet.
+### Lambda
 
-En Wokwi será virtual. Leerá la tarjeta, enviará la información a AWS y esperará la respuesta.
+Ejecuta las reglas:
 
-Si AWS autoriza, moverá el servomotor. Si AWS rechaza, mantendrá el torniquete cerrado.
+- tarjeta activa y no perdida;
+- rostro correspondiente;
+- permiso vigente;
+- persona actualmente fuera o dentro;
+- aforo disponible;
+- visitante vigente;
+- dispositivo autorizado.
 
-### RFID: la tarjeta de identificación
+También prepara reglas para Edge y recibe eventos offline.
 
-RFID es la tecnología de las tarjetas que se acercan a un lector.
+### DynamoDB
 
-Cada tarjeta tiene un código llamado UID. El UID no será el nombre de la persona; será una referencia que permitirá buscar a su propietario.
+Es la base oficial. Guarda personas, tarjetas, visitantes, permisos, presencia, aforo, solicitudes y eventos. No guarda capturas faciales temporales.
 
-Durante las pruebas utilizaremos UID ficticios.
+### Cognito
 
-### AWS: el centro de control
+Gestiona el inicio de sesión y separa los permisos del guardia y el administrador.
 
-AWS es una plataforma de servicios en Internet.
+### Rekognition
 
-En este proyecto actuará como el cerebro central que conecta los computadores. Recibirá las solicitudes, revisará las reglas y guardará la información.
+Compara el rostro durante el modo online. Entrega un resultado facial; Lambda toma la decisión final considerando todas las reglas.
 
-Gracias a AWS, un compañero podrá usar Wokwi en su computador mientras otro observa el dashboard desde otro lugar.
+### CloudWatch
 
-AWS no es un único programa. Está compuesto por diferentes servicios, cada uno con una tarea.
+Permite revisar errores y funcionamiento del backend. Sus logs no deben contener imágenes, tokens ni documentos personales completos.
 
-### API Gateway: la puerta de entrada de AWS
+### AWS SAM y CloudFormation
 
-API Gateway recibe los mensajes enviados por la web o Wokwi.
+Son el plano para reconstruir los recursos AWS en otra cuenta de Learner Lab sin configurarlos nuevamente a mano.
 
-Se parece a la recepción de un edificio: recibe la solicitud, comprueba a qué lugar debe enviarla y entrega una respuesta.
+## SQLite: la libreta local
 
-Ejemplo:
+SQLite es una base de datos pequeña que funciona dentro del servicio Edge. Guardará temporalmente:
 
-> Wokwi pregunta: “La tarjeta 01:02:03:04 quiere entrar. ¿La autorizo?”
+- última versión de reglas;
+- personas y tarjetas habilitadas para el lugar;
+- tarjetas bloqueadas conocidas;
+- permisos y visitantes vigentes;
+- aforo y presencia local;
+- eventos pendientes de sincronización.
 
-API Gateway entrega esa pregunta a Lambda.
+No contendrá contraseñas de Cognito ni fotografías guardadas.
 
-### Lambda: quien revisa las reglas
+## Diferencia entre capturar y procesar una cara
 
-Lambda ejecuta las decisiones del sistema.
+- **Capturar:** la webcam obtiene una imagen temporal.
+- **Procesar:** un motor compara la cara con un perfil autorizado.
+- **Decidir:** se combinan rostro, tarjeta, permiso, presencia y aforo.
 
-Revisará preguntas como:
+La aplicación web solo captura. Rekognition procesa online y la Raspberry procesa offline. Lambda o el servicio Edge aplican las reglas según el modo. Durante la simulación, el servicio Edge puede ejecutarse como un proceso separado en el mismo computador, pero representa una plataforma distinta del navegador y luego se trasladará a la Raspberry.
 
-- ¿La tarjeta existe?
-- ¿Está bloqueada o perdida?
-- ¿El rostro corresponde?
-- ¿La persona tiene permiso?
-- ¿Ya aparece dentro?
-- ¿Hay espacio disponible?
-- ¿El visitante sigue autorizado?
+## ¿Cómo funciona con AWS?
 
-Después responderá “autorizado” o “rechazado”, junto con el motivo.
+1. La web envía RFID y captura al Edge.
+2. Edge crea un identificador único y consulta AWS.
+3. Rekognition compara el rostro.
+4. Lambda revisa las demás reglas.
+5. AWS responde autorizado o rechazado.
+6. Edge controla el torniquete.
+7. El sensor confirma el cruce.
+8. DynamoDB guarda el movimiento.
 
-Lambda solo se ejecuta cuando recibe una solicitud. Por eso es apropiado para ahorrar créditos.
+## ¿Cómo funciona sin AWS?
 
-### DynamoDB: el registro central
+1. Edge detecta que AWS no responde.
+2. Comprueba que su copia tenga menos de 12 horas.
+3. Consulta RFID, permisos, presencia y aforo en SQLite.
+4. El proveedor local compara el rostro.
+5. Edge autoriza o rechaza.
+6. El sensor confirma el cruce.
+7. SQLite guarda el evento como pendiente.
 
-DynamoDB es la base de datos.
+Solo se aceptan automáticamente personas y permisos previamente sincronizados.
 
-Se puede imaginar como un conjunto de fichas digitales ordenadas. Guardará:
+## ¿Qué pasa después de 12 horas?
 
-- Personas.
-- Tarjetas.
-- Visitantes.
-- Permisos.
-- Estado dentro o fuera.
-- Aforo.
-- Intentos autorizados y rechazados.
-- Fecha y hora de los movimientos.
+El sistema entra en modo restringido porque sus permisos podrían estar desactualizados:
 
-No guardará las capturas temporales del rostro.
+- las salidas siguen permitidas;
+- las entradas automáticas se bloquean;
+- el guardia recibe una alerta;
+- una excepción requiere usuario y motivo;
+- los eventos permanecen guardados hasta recuperar AWS.
 
-### Cognito: el control de usuarios
+## ¿Qué pasa cuando vuelve AWS?
 
-Cognito se encargará del inicio de sesión.
-
-Permitirá distinguir entre:
-
-- Guardia.
-- Administrador.
-
-El guardia tendrá acceso a las funciones necesarias para controlar la entrada y registrar visitantes. El administrador podrá configurar personas, tarjetas, capacidad y permisos.
-
-### Rekognition: la comparación facial opcional
-
-Rekognition es el servicio de AWS que puede comparar rostros.
-
-La primera versión no dependerá de él. Utilizaremos un modo ficticio llamado `MOCK`.
-
-Cuando el sistema completo funcione, podremos probar Rekognition con pocas imágenes y los permisos correspondientes.
-
-Rekognition no decidirá por sí solo si una persona entra. Únicamente entregará un resultado facial; Lambda aplicará todas las reglas.
-
-### S3: el lugar para archivos de la web
-
-S3 puede guardar los archivos necesarios para publicar una página web, como HTML, estilos e imágenes del diseño.
-
-No se utilizará para guardar capturas faciales permanentes.
-
-### CloudWatch: el cuaderno de errores
-
-CloudWatch ayuda a saber qué ocurrió dentro de AWS.
-
-Si una función falla, podremos revisar un registro para encontrar el problema. También puede mostrar cuántas veces se ejecutó una función.
-
-Los registros se conservarán por poco tiempo para evitar gastos y acumulación innecesaria de datos.
-
-### AWS SAM y CloudFormation: el plano para reconstruir AWS
-
-Estas herramientas describen por escrito qué recursos necesita el proyecto.
-
-Son parecidas al plano de una casa. Si se terminan los créditos de una cuenta, utilizaremos el mismo plano para crear los recursos en otra cuenta.
-
-Así no tendremos que recordar manualmente cada botón presionado en AWS.
-
-## ¿Cómo será una entrada completa?
-
-### Paso 1: tarjeta
-
-La persona presenta una tarjeta ficticia en Wokwi o en el simulador web.
-
-### Paso 2: solicitud
-
-El código de la tarjeta viaja a AWS.
-
-### Paso 3: identidad
-
-La aplicación web muestra la solicitud y realiza una validación facial ficticia o temporal.
-
-### Paso 4: reglas
-
-AWS revisa la tarjeta, la identidad, el permiso, el estado de la persona y el aforo.
-
-### Paso 5: autorización
-
-Si todo está correcto, AWS permite un solo paso durante un tiempo corto.
-
-### Paso 6: torniquete
-
-Wokwi enciende la luz verde y mueve el servomotor.
-
-### Paso 7: confirmación
-
-El sensor confirma que la persona cruzó. Recién entonces se registra la entrada y aumenta el aforo.
-
-Si nadie cruza, la autorización vence y el contador no cambia.
-
-## ¿Por qué no se registra apenas se autoriza?
-
-Porque una persona podría validar su tarjeta y después no entrar.
-
-El sensor separa dos cosas:
-
-- Tener permiso para pasar.
-- Haber pasado realmente.
-
-Esto ayuda a mantener correcto el aforo.
+Edge envía los eventos pendientes, AWS evita duplicados, reconstruye el estado, entrega las reglas nuevas y confirma el retorno al modo online.
 
 ## ¿Qué significa anti-passback?
 
-Significa que una persona que aparece dentro no puede marcar otra entrada.
+Una persona que aparece dentro no puede marcar otra entrada. Primero debe registrar su salida. Esto dificulta el uso de una tarjeta perdida o prestada.
 
-Primero deberá registrar su salida. Esto dificulta que otra persona utilice una tarjeta perdida o prestada.
+## ¿Por qué se necesita un sensor?
 
-## ¿Qué verá el guardia?
+Una autorización significa “puede pasar”, no “ya pasó”. El aforo cambia únicamente cuando el sensor confirma el cruce.
 
-- Aforo actual.
-- Personas presentes.
-- Solicitudes recientes.
-- Alertas.
-- Registro de visitantes.
-- Opción para reportar tarjetas perdidas.
-- Solicitud de correcciones con motivo.
+## Guardia y administrador
 
-No podrá administrar todo el sistema ni ver información biométrica.
+El guardia puede consultar aforo, personas presentes, alertas, visitantes y tarjetas perdidas. No puede crear trabajadores permanentes, cambiar políticas ni consultar perfiles biométricos.
 
-## ¿Qué verá el administrador?
+El administrador puede gestionar personas, dispositivos, capacidad y permisos, además de revisar la auditoría completa.
 
-Además de las funciones generales, podrá:
+## Uso desde varios computadores
 
-- Crear o desactivar personas.
-- Asignar tarjetas.
-- Configurar capacidad.
-- Administrar permisos.
-- Gestionar dispositivos.
-- Revisar auditoría completa.
+- PC 1: servicio Edge simulado, RFID, webcam y torniquete virtual.
+- PC 2: panel limitado del guardia.
+- PC 3 opcional: dashboard administrativo.
 
-## ¿Cómo funciona desde dos computadores?
+Con AWS disponible comparten la información central. Durante una interrupción, las funciones esenciales del punto de acceso utilizan la red local y la Raspberry.
 
-Ambos computadores consultarán el mismo sistema AWS.
+## Privacidad
 
-Ejemplo:
+La primera etapa utilizará identidades ficticias. Si se prueba una persona real:
 
-- Computador 1: Wokwi y torniquete.
-- Computador 2: aplicación web del guardia.
-- Computador 3 opcional: dashboard del administrador.
+- se informa la finalidad;
+- se solicita la autorización que corresponda;
+- la captura se elimina después de comparar;
+- se ofrece un método alternativo;
+- el guardia no accede al perfil facial;
+- los datos locales reciben la misma protección que los datos cloud.
 
-No necesitan conectarse directamente entre ellos. AWS mantiene la información compartida.
+## Costos
 
-## ¿Es un sistema real?
+El desarrollo utilizará `MOCK` la mayor parte del tiempo. Rekognition se probará pocas veces, no habrá servidores permanentes y el Edge descargará datos completos solo cuando cambie la versión. El objetivo interno continúa siendo no superar USD 10 del crédito disponible durante el prototipo.
 
-Es una simulación diseñada con reglas realistas.
+## Carpetas
 
-No moverá inicialmente un torniquete físico ni será un sistema oficial de asistencia laboral. Sin embargo, su estructura permitirá reemplazar componentes virtuales por componentes físicos en el futuro sin rehacer todo.
-
-## Datos personales y seguridad
-
-Durante la primera etapa se usarán datos ficticios.
-
-Si se prueban rostros reales:
-
-- Se informará la finalidad.
-- Se solicitará autorización cuando corresponda.
-- La captura se eliminará después de comparar.
-- Se ofrecerá un método alternativo.
-- El guardia no verá la fotografía.
-- Los registros se conservarán solo por el tiempo definido.
-
-Las claves AWS nunca se guardarán en GitHub o Wokwi.
-
-## ¿Gastará mucho dinero?
-
-El diseño utiliza servicios que cobran principalmente cuando se usan.
-
-Para controlar los USD 50:
-
-- Se utilizará `MOCK` casi siempre.
-- Rekognition se probará pocas veces.
-- No se usarán servidores permanentes.
-- Wokwi consultará solo mientras exista una solicitud.
-- Los registros de CloudWatch tendrán conservación corta.
-- Se revisará el saldo regularmente.
-
-El objetivo interno es no superar USD 10 durante el prototipo.
-
-## ¿Qué contiene cada carpeta?
-
-| Carpeta | Explicación sencilla |
+| Carpeta | Contenido |
 |:---|:---|
 | `frontend/` | Aplicación web y dashboards |
-| `backend/` | Reglas que ejecutará AWS |
-| `infrastructure/` | Plano para crear los servicios AWS |
-| `wokwi/` | Circuito y código del ESP32 |
-| `docs/` | Explicaciones, decisiones y pruebas |
-| `data/` futura | Personas y tarjetas ficticias |
-| `scripts/` futura | Herramientas de respaldo y configuración |
+| `backend/` | Reglas y funciones AWS |
+| `edge/` | Simulador local y futuro programa Raspberry Pi |
+| `infrastructure/` | Plano para reconstruir AWS |
+| `docs/` | Arquitectura, decisiones y pruebas |
+| `data/` futura | Datos ficticios y configuraciones de ejemplo |
+| `scripts/` futura | Respaldo, migración y utilidades |
 
-## Estado actual
+## Resumen
 
-Actualmente existe el diseño y la documentación. Todavía no existe una aplicación funcionando.
-
-La siguiente fase comenzará creando desde cero:
-
-1. La aplicación web básica.
-2. Una ruta de prueba en AWS.
-3. La conexión web–AWS.
-4. La conexión Wokwi–AWS.
-5. Las reglas y la base de datos.
-6. Los dashboards.
-7. Las pruebas completas.
-
-## Resumen final
-
-- GitHub guarda y organiza el proyecto.
-- Visual Studio Code sirve para programar.
-- La web muestra la simulación y los dashboards.
-- Wokwi representa la electrónica.
-- AWS comunica todo y aplica las reglas.
-- DynamoDB guarda los registros.
-- Cognito separa guardia y administrador.
-- Rekognition compara rostros de forma opcional.
-- SAM permite reconstruir AWS en otra cuenta.
-
-La idea más importante es que cada parte tiene una responsabilidad y todas se comunican mediante AWS.
+- La web captura y muestra.
+- Raspberry/Edge coordina y controla el torniquete.
+- AWS decide y guarda cuando está disponible.
+- SQLite mantiene una copia local limitada.
+- Rekognition procesa el rostro online.
+- El proveedor local lo procesa offline.
+- Las reglas se actualizan cada 5 minutos.
+- La configuración offline dura 12 horas.
+- Al volver AWS se sincronizan los eventos sin duplicarlos.
