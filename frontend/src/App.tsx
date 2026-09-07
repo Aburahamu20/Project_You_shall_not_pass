@@ -1,58 +1,19 @@
 import { useState } from 'react'
+import { AccessForm } from './components/AccessForm'
+import { AccessHistory } from './components/AccessHistory'
+import { SummaryCard } from './components/SummaryCard'
+import { initialPeople } from './data/mockPeople'
+import type {
+  AccessLog,
+  AccessResult,
+  Direction,
+  Person,
+} from './types/access'
 import './App.css'
 
-type Direction = 'ENTRADA' | 'SALIDA'
-type AccessResult = 'AUTORIZADO' | 'RECHAZADO'
-
-type Person = {
-  id: number
-  name: string
-  cardId: string
-  inside: boolean
-  blocked: boolean
-  entriesToday: number
-}
-
-type AccessLog = {
-  id: number
-  person: string
-  direction: Direction
-  result: AccessResult
-  reason: string
-  time: string
-}
-
-const initialPeople: Person[] = [
-  {
-    id: 1,
-    name: 'Ana Torres',
-    cardId: 'RFID-001',
-    inside: false,
-    blocked: false,
-    entriesToday: 0,
-  },
-  {
-    id: 2,
-    name: 'Bruno Silva',
-    cardId: 'RFID-002',
-    inside: true,
-    blocked: false,
-    entriesToday: 1,
-  },
-  {
-    id: 3,
-    name: 'Camila Rojas',
-    cardId: 'RFID-003',
-    inside: false,
-    blocked: true,
-    entriesToday: 0,
-  },
-]
-
 function App() {
-  const [people, setPeople] = useState(initialPeople)
+  const [people, setPeople] = useState<Person[]>(initialPeople)
   const [occupancy, setOccupancy] = useState(1)
-  const [capacity] = useState(10)
   const [direction, setDirection] = useState<Direction>('ENTRADA')
   const [selectedCard, setSelectedCard] = useState('')
   const [selectedFace, setSelectedFace] = useState('')
@@ -60,6 +21,8 @@ function App() {
   const [turnstileOpen, setTurnstileOpen] = useState(false)
   const [message, setMessage] = useState('Esperando una validación')
   const [logs, setLogs] = useState<AccessLog[]>([])
+
+  const capacity = 10
 
   const addLog = (
     person: string,
@@ -88,6 +51,7 @@ function App() {
     const cardOwner = people.find(
       (person) => person.cardId === selectedCard,
     )
+
     const faceOwner = people.find(
       (person) => person.id === Number(selectedFace),
     )
@@ -170,119 +134,45 @@ function App() {
       </header>
 
       <section className="summary-grid">
-        <article className="summary-card">
-          <span>Personas dentro</span>
-          <strong>
-            {occupancy} / {capacity}
-          </strong>
-          <p>{occupancy >= capacity ? 'Aforo completo' : 'Acceso disponible'}</p>
-        </article>
+        <SummaryCard
+          title="Personas dentro"
+          value={`${occupancy} / ${capacity}`}
+          description={
+            occupancy >= capacity ? 'Aforo completo' : 'Acceso disponible'
+          }
+        />
 
-        <article className="summary-card">
-          <span>Modo de operación</span>
-          <strong>{online ? 'ONLINE' : 'OFFLINE'}</strong>
-          <p>
-            {online
+        <SummaryCard
+          title="Modo de operación"
+          value={online ? 'ONLINE' : 'OFFLINE'}
+          description={
+            online
               ? 'Validación mediante AWS'
-              : 'Reglas locales vigentes por 12 horas'}
-          </p>
-        </article>
+              : 'Reglas locales vigentes por 12 horas'
+          }
+        />
 
-        <article className="summary-card">
-          <span>Torniquete</span>
-          <strong className={turnstileOpen ? 'success' : 'danger'}>
-            {turnstileOpen ? 'HABILITADO' : 'BLOQUEADO'}
-          </strong>
-          <p>{message}</p>
-        </article>
+        <SummaryCard
+          title="Torniquete"
+          value={turnstileOpen ? 'HABILITADO' : 'BLOQUEADO'}
+          description={message}
+          variant={turnstileOpen ? 'success' : 'danger'}
+        />
       </section>
 
       <section className="content-grid">
-        <article className="panel">
-          <h2>Simulador de validación</h2>
+        <AccessForm
+          people={people}
+          direction={direction}
+          selectedCard={selectedCard}
+          selectedFace={selectedFace}
+          onDirectionChange={setDirection}
+          onCardChange={setSelectedCard}
+          onFaceChange={setSelectedFace}
+          onValidate={validateAccess}
+        />
 
-          <div className="direction-buttons">
-            <button
-              className={direction === 'ENTRADA' ? 'active' : ''}
-              onClick={() => setDirection('ENTRADA')}
-            >
-              Entrada
-            </button>
-
-            <button
-              className={direction === 'SALIDA' ? 'active' : ''}
-              onClick={() => setDirection('SALIDA')}
-            >
-              Salida
-            </button>
-          </div>
-
-          <label>
-            Tarjeta RFID
-            <select
-              value={selectedCard}
-              onChange={(event) => setSelectedCard(event.target.value)}
-            >
-              <option value="">Seleccione una tarjeta</option>
-              {people.map((person) => (
-                <option key={person.cardId} value={person.cardId}>
-                  {person.cardId} — {person.name}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label>
-            Rostro simulado
-            <select
-              value={selectedFace}
-              onChange={(event) => setSelectedFace(event.target.value)}
-            >
-              <option value="">Seleccione un rostro</option>
-              {people.map((person) => (
-                <option key={person.id} value={person.id}>
-                  {person.name}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <button className="validate-button" onClick={validateAccess}>
-            Validar identidad
-          </button>
-        </article>
-
-        <article className="panel">
-          <h2>Últimos intentos</h2>
-
-          {logs.length === 0 ? (
-            <p className="empty-state">Todavía no existen registros.</p>
-          ) : (
-            <div className="log-list">
-              {logs.map((log) => (
-                <div className="log-item" key={log.id}>
-                  <div>
-                    <strong>{log.person}</strong>
-                    <p>
-                      {log.direction} · {log.time}
-                    </p>
-                    <small>{log.reason}</small>
-                  </div>
-
-                  <span
-                    className={
-                      log.result === 'AUTORIZADO'
-                        ? 'log-success'
-                        : 'log-danger'
-                    }
-                  >
-                    {log.result}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </article>
+        <AccessHistory logs={logs} />
       </section>
     </main>
   )
