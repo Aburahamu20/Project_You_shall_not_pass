@@ -1,13 +1,96 @@
 openapi: 3.0.3
 info:
   title: Project You Shall Not Pass API
-  version: 1.1.0
-  description: Contrato conceptual de la simulación de acceso.
+  version: 2.0.0
+  description: Contrato conceptual del acceso híbrido AWS y Edge.
 servers:
   - url: https://example.execute-api.us-east-1.amazonaws.com/api/v1
 security:
   - bearerAuth: []
 paths:
+  /health:
+    get:
+      summary: Comprobar disponibilidad del backend AWS
+      security: []
+      operationId: getHealth
+      responses:
+        '200':
+          description: Backend disponible
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+  /edge/config:
+    get:
+      summary: Consultar la configuración versionada del dispositivo
+      operationId: getEdgeConfiguration
+      security:
+        - deviceBearerAuth: []
+      parameters:
+        - name: deviceId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: currentVersion
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+      responses:
+        '200':
+          description: Configuración vigente o nueva versión
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfigurationSnapshot'
+        '304':
+          description: La versión local continúa vigente
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /edge/events/sync:
+    post:
+      summary: Sincronizar eventos creados durante el modo offline
+      operationId: syncEdgeEvents
+      security:
+        - deviceBearerAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SyncBatch'
+      responses:
+        '200':
+          description: Resultado por evento
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncResult'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /edge/status:
+    post:
+      summary: Informar modo, versión y salud del dispositivo
+      operationId: reportEdgeStatus
+      security:
+        - deviceBearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EdgeStatus'
+      responses:
+        '202':
+          description: Estado recibido
   /access-requests:
     post:
       summary: Crear solicitud RFID
@@ -153,6 +236,10 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+    deviceBearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: DeviceToken
   parameters:
     RequestId:
       name: requestId
@@ -197,7 +284,7 @@ components:
           enum: [ENTRY, EXIT]
         source:
           type: string
-          enum: [WEB_SIMULATOR, WOKWI, PHYSICAL_READER]
+          enum: [WEB_SIMULATOR, EDGE_SIMULATOR, RASPBERRY_PI, PHYSICAL_READER]
         deviceId:
           type: string
         locationId:
@@ -208,7 +295,7 @@ components:
       properties:
         provider:
           type: string
-          enum: [MOCK, REKOGNITION]
+          enum: [MOCK, REKOGNITION, LOCAL]
         mockIdentityId:
           type: string
           description: Solo pruebas ficticias.
@@ -235,6 +322,8 @@ components:
         expiresAt:
           type: string
           format: date-time
+        operationMode:
+          $ref: '#/components/schemas/OperationMode'
     Occupancy:
       type: object
       properties:
@@ -249,6 +338,104 @@ components:
         status:
           type: string
           enum: [AVAILABLE, NEAR_CAPACITY, FULL]
+    OperationMode:
+      type: string
+      enum: [ONLINE, OFFLINE_VALID, OFFLINE_EXPIRED, SYNCING, LOCKDOWN]
+    Health:
+      type: object
+      required: [status, serverTime]
+      properties:
+        status:
+          type: string
+          enum: [OK]
+        serverTime:
+          type: string
+          format: date-time
+    ConfigurationSnapshot:
+      type: object
+      required: [deviceId, version, generatedAt, validUntil, checksum, signature]
+      properties:
+        deviceId:
+          type: string
+        version:
+          type: integer
+          minimum: 1
+        generatedAt:
+          type: string
+          format: date-time
+        validUntil:
+          type: string
+          format: date-time
+          description: Doce horas después de la última sincronización válida en el Diseño 2.0.
+        checksum:
+          type: string
+        signature:
+          type: string
+          writeOnly: true
+        configuration:
+          type: object
+          additionalProperties: true
+    SyncBatch:
+      type: object
+      required: [deviceId, events]
+      properties:
+        deviceId:
+          type: string
+        events:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/OfflineEvent'
+    OfflineEvent:
+      type: object
+      required: [eventId, requestId, occurredAt, operationMode, eventType]
+      properties:
+        eventId:
+          type: string
+        requestId:
+          type: string
+        occurredAt:
+          type: string
+          format: date-time
+        operationMode:
+          $ref: '#/components/schemas/OperationMode'
+        eventType:
+          type: string
+        reasonCode:
+          type: string
+          nullable: true
+    SyncResult:
+      type: object
+      required: [acceptedEventIds, duplicateEventIds, rejectedEventIds]
+      properties:
+        acceptedEventIds:
+          type: array
+          items:
+            type: string
+        duplicateEventIds:
+          type: array
+          items:
+            type: string
+        rejectedEventIds:
+          type: array
+          items:
+            type: string
+    EdgeStatus:
+      type: object
+      required: [deviceId, operationMode, configurationVersion, pendingEventCount, reportedAt]
+      properties:
+        deviceId:
+          type: string
+        operationMode:
+          $ref: '#/components/schemas/OperationMode'
+        configurationVersion:
+          type: integer
+        pendingEventCount:
+          type: integer
+          minimum: 0
+        reportedAt:
+          type: string
+          format: date-time
     CreateVisitor:
       type: object
       required: [displayName, hostPersonId, reason, validUntil]

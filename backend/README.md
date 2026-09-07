@@ -8,6 +8,7 @@ Contendrá las funciones Lambda y la lógica del dominio.
 - Casos de uso.
 - Políticas de acceso.
 - Proveedores `MOCK` y `REKOGNITION`.
+- Casos de uso de configuración Edge y sincronización de eventos.
 - Repositorios desacoplados.
 - Eventos, errores, retención y anonimización.
 
@@ -19,6 +20,9 @@ Contendrá las funciones Lambda y la lógica del dominio.
 - Tiempo en UTC.
 - Sin fotografías o secretos en logs.
 - Permisos validados en backend.
-- Fallo seguro: torniquete bloqueado.
+- AWS será la fuente oficial de reglas y datos.
+- La configuración Edge se versionará y vencerá después de 12 horas.
+- Los eventos offline se recibirán con idempotencia.
+- Fallo seguro y continuidad local según [modos de operación](../docs/modos-operacion.md).
 
 Contrato: [../docs/openapi.yaml](../docs/openapi.yaml).

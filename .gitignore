@@ -29,7 +29,13 @@ samconfig.toml
 .DS_Store
 Thumbs.db
 
-# Wokwi y compilación
+# Edge, datos locales y compilación
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+edge/data/
 .pio/
 build/
 *.elf

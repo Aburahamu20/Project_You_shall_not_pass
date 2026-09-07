@@ -9,13 +9,15 @@ Construir el simulador por etapas pequeñas, comprobables y transportables entre
 | Fase | Objetivo | Se considera terminada cuando... |
 |:---:|:---|:---|
 | 0 | Preparar el proyecto | El repositorio abre en Visual Studio Code, instala dependencias y ejecuta una página básica |
-| 1 | Crear el simulador web local | Se pueden simular tarjetas, entradas, salidas, aforo y rechazos con datos ficticios |
-| 2 | Separar el backend y las reglas | Las reglas se prueban sin depender de la interfaz, DynamoDB ni Rekognition |
-| 3 | Conectar AWS | La web llama a `/api/v1/health` y guarda un evento ficticio en DynamoDB |
-| 4 | Incorporar usuarios y roles | Guardia y administrador ven únicamente las funciones permitidas |
-| 5 | Incorporar Wokwi | El ESP32 virtual envía un UID, recibe la decisión y representa el torniquete |
-| 6 | Incorporar validación facial | El modo `MOCK` funciona y Rekognition se prueba de forma opcional y controlada |
-| 7 | Completar pruebas y demostración | Se ejecutan los casos críticos, se revisan costos y se prueba la recuperación en otra cuenta |
+| 1 | Crear el simulador web local | Se pueden capturar o simular RFID, rostro, dirección y sensor sin tomar decisiones en el navegador |
+| 2 | Separar reglas y contratos | Las reglas se prueban sin depender de la interfaz, DynamoDB ni proveedores faciales |
+| 3 | Crear el simulador Edge | Recibe la solicitud web, identifica dispositivo y controla el torniquete virtual |
+| 4 | Conectar AWS | El Edge llama a `/api/v1/health`, AWS decide y DynamoDB guarda un evento ficticio |
+| 5 | Incorporar usuarios y roles | Guardia y administrador ven únicamente las funciones permitidas |
+| 6 | Incorporar continuidad offline | SQLite guarda configuración vigente, presencia, aforo y eventos pendientes |
+| 7 | Incorporar sincronización | El Edge actualiza reglas cada 5 minutos y recupera eventos sin duplicarlos |
+| 8 | Incorporar validación facial | `MOCK` funciona; Rekognition online y proveedor `LOCAL` se prueban de forma controlada |
+| 9 | Completar pruebas y demostración | Se prueban modos, fallos, costos y recuperación en otra cuenta AWS |
 
 ## Primera funcionalidad completa
 
@@ -39,7 +41,7 @@ El equipo puede repartir responsabilidades sin separar el proyecto en repositori
 | Interfaz | `frontend/` | Pantallas del torniquete, guardia y administrador |
 | Reglas | `backend/` | Acceso, anti-passback, aforo, visitantes y eventos |
 | AWS | `infrastructure/` | SAM, API Gateway, Lambda, DynamoDB y configuración |
-| Electrónica | `wokwi/` | ESP32, RFID, luces, pantalla, sensor y servomotor |
+| Edge | `edge/` | Raspberry simulada, SQLite, sincronización, sensor y torniquete |
 | Pruebas y documentación | `docs/` | Casos, evidencias, costos, privacidad y decisiones |
 
 Una persona puede ayudar en más de un área, pero cada tarea debe tener un responsable identificado.
@@ -49,8 +51,10 @@ Una persona puede ayudar en más de un área, pero cada tarea debe tener un resp
 1. `feature/project-bootstrap`
 2. `feature/simulador-acceso-local`
 3. `feature/reglas-acceso`
-4. `feature/aws-health-check`
-5. `feature/dynamodb-eventos`
+4. `feature/edge-simulator`
+5. `feature/aws-health-check`
+6. `feature/dynamodb-eventos`
+7. `feature/edge-offline-sync`
 
 Las ramas posteriores se crearán cuando las anteriores estén integradas y comprobadas.
 
@@ -69,6 +73,7 @@ Una tarea está terminada cuando:
 
 - Crear recursos AWS sin una plantilla o propósito comprobable.
 - Utilizar rostros o documentos reales.
-- Conectar Wokwi antes de tener una API estable.
+- Conectar hardware físico antes de tener estable el simulador Edge.
+- Implementar reconocimiento facial local antes de probar el flujo con `MOCK`.
 - Implementar Rekognition antes del modo `MOCK`.
 - Trabajar directamente en `main`.

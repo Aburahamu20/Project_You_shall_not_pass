@@ -56,7 +56,8 @@ El objetivo interno será consumir como máximo **USD 10** durante todo el proto
 - `FACE_PROVIDER=MOCK` durante desarrollo.
 - Rekognition solo en pruebas finales y con cantidad definida.
 - API Gateway HTTP API en lugar de REST API, si cubre autenticación y rutas.
-- Polling cada dos segundos solo mientras exista una solicitud pendiente.
+- Polling de solicitudes solo mientras exista una validación pendiente.
+- Sincronización Edge cada 5 minutos, descargando datos completos solo si cambia la versión.
 - Tiempo máximo de polling de 30–60 segundos.
 - Sin EC2, RDS, NAT Gateway, caché de API Gateway ni Provisioned Concurrency.
 - DynamoDB bajo demanda y TTL para solicitudes temporales.
@@ -84,11 +85,12 @@ El respaldo principal no será una copia manual de la consola. Estará compuesto
 
 | Elemento | Ubicación futura |
 |:---|:---|
-| Frontend, backend y Wokwi | Repositorio GitHub |
+| Frontend, backend y servicio Edge | Repositorio GitHub |
 | API y modelos | `docs/openapi.yaml` y documentación |
 | Infraestructura | `infrastructure/template.yaml` |
 | Parámetros sin secretos | Archivos `*.example` |
 | Datos ficticios iniciales | `data/seed-*.json` |
+| Configuración local inicial | `data/edge-config.example.json` |
 | Exportación/importación | `scripts/` |
 | Procedimiento | Este documento |
 
@@ -108,7 +110,7 @@ Los archivos `template.yaml`, datos y scripts se crearán durante la implementac
 | Rekognition | Configuración, no capturas | Reinscribir referencias autorizadas |
 | CloudWatch | Configuración de retención | No migrar logs antiguos |
 | Frontend | Código y variables de ejemplo | Publicar con URL nueva |
-| Wokwi | Firmware y diagrama | Cambiar `API_BASE_URL` |
+| Servicio Edge | Código y configuración sin secretos | Cambiar `API_BASE_URL` y volver a sincronizar |
 
 AWS ofrece exportación de DynamoDB a S3 e importación en otra cuenta, pero puede requerir permisos que Learner Lab no entregue. Referencia: [migración de DynamoDB entre cuentas](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/bp-migrating-table-between-accounts.html).
 
@@ -124,7 +126,7 @@ Para el volumen pequeño de la simulación se implementará además una exportac
 6. Ejecutar `sam deploy --guided`.
 7. Importar datos ficticios.
 8. Recrear usuarios y grupos de Cognito.
-9. Actualizar las variables del frontend y Wokwi con la nueva URL.
+9. Actualizar las variables del frontend y del servicio Edge con la nueva URL.
 10. Probar `GET /api/v1/health`.
 11. Ejecutar los casos críticos de acceso, aforo y permisos.
 12. Eliminar copias temporales que ya no sean necesarias.

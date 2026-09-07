@@ -9,9 +9,9 @@
 ![Badge](https://img.shields.io/badge/Asignatura-SIY6122-0078D4?style=for-the-badge)
 ![Badge](https://img.shields.io/badge/Evaluación-EP1-28a745?style=for-the-badge)
 ![Badge](https://img.shields.io/badge/Fase-Diseño%20conceptual-f0ad4e?style=for-the-badge)
-![Badge](https://img.shields.io/badge/Diseño-1.1-0A66C2?style=for-the-badge)
+![Badge](https://img.shields.io/badge/Diseño-2.0-0A66C2?style=for-the-badge)
 ![Badge](https://img.shields.io/badge/Cloud-AWS%20Academy-FF9900?style=for-the-badge)
-![Badge](https://img.shields.io/badge/Simulación-Web%20%2B%20Wokwi-6C63FF?style=for-the-badge)
+![Badge](https://img.shields.io/badge/Arquitectura-Híbrida%20AWS%20%2B%20Edge-6C63FF?style=for-the-badge)
 
 | Campo | Detalle |
 |:---|:---|
@@ -24,8 +24,8 @@
 | **Caso** | Caso 02 - Control de acceso y aforo para sala o laboratorio |
 | **Proyecto** | Project You Shall Not Pass |
 | **Plataforma principal** | Aplicación web desarrollada en Visual Studio Code |
-| **Simulación electrónica** | Wokwi con ESP32, RFID, pantalla, luces, sensor y servomotor |
-| **Servicios cloud previstos** | Amazon Cognito, API Gateway, Lambda, DynamoDB, S3 y CloudWatch |
+| **Controlador local** | Raspberry Pi 4 o servicio Edge simulado en un computador |
+| **Servicios cloud previstos** | Amazon Cognito, API Gateway, Lambda, DynamoDB, Rekognition, S3 y CloudWatch |
 | **Entorno AWS inicial** | AWS Academy Learner Lab de Duoc UC |
 | **Integrantes** | Abraham Castro Romero · Sebastián Fuentes Cortés · Lisandra González Hernández · Felipe Murúa Lobos · Bárbara Saavedra Fernández |
 | **Docente** | Marcos Antonio Perelli Henríquez |
@@ -64,7 +64,7 @@ Antes de programar, revisa también el [stack tecnológico](docs/stack-tecnologi
 - [17. Estructura preparada para la implementación](#17-estructura-preparada-para-la-implementación)
 - [18. Revisión de requisitos](#18-revisión-de-requisitos)
 - [19. Próxima fase](#19-próxima-fase)
-- [20. Diseño 1.1](#20-diseño-11)
+- [20. Diseño 2.0](#20-diseño-20)
 
 ---
 
@@ -80,7 +80,7 @@ En esta etapa:
 - Se incorpora una regla de anti-passback para impedir entradas duplicadas.
 - Se diseña el registro temporal de visitantes.
 - Se propone una arquitectura compatible con AWS Academy Learner Lab.
-- Se define cómo se unirán Visual Studio Code, Wokwi y AWS.
+- Se define cómo se unirán la aplicación web, el servicio Edge, la Raspberry Pi y AWS.
 - Se prepara una estructura de repositorio que podrá recibir el código futuro sin reorganizar el proyecto.
 
 > **Importante:** todavía no se incluyen credenciales reales, fotografías biométricas, circuitos definitivos ni servicios productivos. Las primeras pruebas deberán realizarse con usuarios e identidades ficticias.
@@ -122,21 +122,27 @@ El prototipo también deberá:
 
 ## 4. Solución propuesta
 
-La solución se dividirá en tres partes conectadas:
+La solución utilizará una arquitectura híbrida: AWS será la plataforma principal y un servicio Edge compatible con Raspberry Pi mantendrá una continuidad local controlada.
 
 | Parte | Responsabilidad |
 |:---|:---|
-| **Aplicación web** | Cámara, validación facial, panel del guardia, panel administrativo, visitantes, aforo e historial |
-| **Wokwi** | ESP32, lector RFID MFRC522, luces, pantalla, sensor de paso y servomotor del torniquete |
-| **AWS** | Autenticación, reglas del sistema, API, base de datos, registros y sincronización entre computadores |
+| **Aplicación web** | Capturar RFID y rostro; mostrar terminal, panel del guardia y dashboard administrativo |
+| **Raspberry Pi / Edge** | Coordinar solicitudes, controlar el torniquete, mantener la copia offline y sincronizar eventos |
+| **AWS** | Autenticación, reglas oficiales, reconocimiento facial online, base de datos y auditoría |
+| **SQLite local** | Reglas vigentes, aforo, presencia y eventos pendientes durante una interrupción |
 
-La aplicación web será el simulador principal. Wokwi complementará la demostración representando la parte electrónica. Ambos componentes se comunicarán mediante una API alojada en AWS.
+La aplicación ejecutada en el navegador no reconocerá el rostro ni decidirá el acceso. Con AWS disponible, Rekognition y Lambda procesarán la solicitud. Sin AWS, la Raspberry utilizará la última configuración válida durante un máximo de 12 horas. Durante la simulación, un proceso separado en el computador representará esa Raspberry.
 
 ```mermaid
-flowchart LR
-    W["Wokwi: RFID y torniquete"] <--> A["AWS: API, reglas y datos"]
-    V["Aplicación web: cámara y paneles"] <--> A
+flowchart TD
+    WEB["Aplicación web: captura y paneles"] -->|"RFID, rostro y acciones"| EDGE["Raspberry Pi o simulador Edge"]
+    EDGE -->|"Modo online"| AWS["AWS: API, reglas y datos"]
+    AWS -->|"Decisión y reglas nuevas"| EDGE
+    EDGE <-->|"Modo offline"| LOCAL["SQLite + reglas + rostro local"]
+    EDGE <-->|"Habilitar y confirmar"| TURN["Torniquete + sensor"]
 ```
+
+La explicación por capas, los flujos online/offline y el recorrido de los datos se encuentran en [Arquitectura híbrida — Diseño 2.0](docs/arquitectura.md).
 
 ---
 
@@ -173,10 +179,10 @@ Amazon Cognito se utilizará para autenticar al guardia y al administrador. En e
 
 | Entrada | Origen | Uso |
 |:---|:---|:---|
-| UID de tarjeta | RFID MFRC522 virtual o lector de la aplicación | Identificar la credencial presentada |
+| UID de tarjeta | Lector virtual de la aplicación o futuro lector conectado a Raspberry | Identificar la credencial presentada |
 | Rostro | Webcam o identidad ficticia | Confirmar la identidad asociada a la tarjeta |
 | Dirección | Lector de entrada o salida | Determinar el movimiento solicitado |
-| Sensor de paso | Wokwi o botón de confirmación web | Confirmar que la persona realmente cruzó |
+| Sensor de paso | Simulador Edge, botón web o futuro sensor conectado a la Raspberry | Confirmar que la persona realmente cruzó |
 | Capacidad máxima | Configuración administrativa | Impedir el ingreso cuando no exista espacio |
 | Datos del visitante | Formulario del guardia | Crear una autorización temporal |
 | Reporte de pérdida | Guardia o administrador | Bloquear inmediatamente una credencial |
@@ -271,24 +277,24 @@ El guardia podrá finalizar la visita, pero no convertir al visitante en trabaja
 
 ## 10. Simulación distribuida
 
-La demostración podrá realizarse en dos o más computadores conectados a internet:
+La demostración podrá realizarse en dos o más computadores. El servicio Edge se simulará inicialmente en un computador y conservará el mismo contrato que utilizará una Raspberry Pi 4 futura.
 
 | Computador | Demostración |
 |:---|:---|
-| **PC 1** | Wokwi con RFID, ESP32, pantalla, luces, sensor y torniquete |
-| **PC 2** | Aplicación web con cámara y panel limitado del guardia |
+| **PC 1** | Servicio Edge, RFID, webcam y torniquete virtual |
+| **PC 2** | Panel limitado del guardia |
 | **PC 3 opcional** | Dashboard completo del administrador |
 
 Ejemplo de demostración:
 
 1. En PC 1 se presenta una tarjeta virtual.
-2. Wokwi envía el UID y el identificador `TORNIQUETE-01` a AWS.
-3. En PC 2 aparece una solicitud pendiente.
-4. La aplicación captura o simula el rostro.
-5. AWS valida ambas identidades y las reglas de acceso.
-6. Wokwi recibe la autorización y mueve el servomotor.
+2. La aplicación captura o simula el rostro y envía ambos datos al servicio Edge.
+3. Si AWS está disponible, el Edge reenvía la solicitud para validar identidad y reglas.
+4. Si AWS no responde, el Edge utiliza la última configuración local vigente.
+5. El servicio correspondiente devuelve una autorización o rechazo.
+6. El Edge habilita virtualmente un solo paso.
 7. El sensor confirma el paso.
-8. El dashboard actualiza el aforo y el historial.
+8. El dashboard actualiza el aforo y el historial online o deja el evento pendiente de sincronización.
 
 ---
 
@@ -297,8 +303,8 @@ Ejemplo de demostración:
 | Servicio | Uso previsto |
 |:---|:---|
 | **Amazon Cognito** | Inicio de sesión y roles de guardia y administrador |
-| **Amazon API Gateway** | API HTTPS utilizada por la aplicación y Wokwi |
-| **AWS Lambda** | Validación, anti-passback, visitantes, aforo y auditoría |
+| **Amazon API Gateway** | API HTTPS utilizada por el dashboard y el servicio Edge |
+| **AWS Lambda** | Validación online, anti-passback, visitantes, aforo, configuración Edge y sincronización |
 | **Amazon DynamoDB** | Personas, tarjetas, permisos, estados y eventos |
 | **Amazon S3** | Archivos estáticos del frontend y recursos autorizados |
 | **Amazon Rekognition** | Comparación facial, solamente si Learner Lab lo permite |
@@ -308,14 +314,16 @@ No se utilizarán inicialmente servidores EC2, RDS ni NAT Gateway. La arquitectu
 
 ```mermaid
 flowchart TD
-    C["Clientes: web y Wokwi"] --> G["API Gateway"]
+    E["Raspberry Pi / Edge"] --> G["API Gateway"]
+    C["Dashboard web"] --> G
     G --> L["Lambda"]
     L --> D["DynamoDB"]
     L --> R["Rekognition opcional"]
     U["Cognito"] --> G
+    L -->|"Decisión y configuración"| E
 ```
 
-Más detalles: [Arquitectura prevista](docs/arquitectura.md).
+Más detalles: [Arquitectura híbrida — Diseño 2.0](docs/arquitectura.md).
 
 ---
 
@@ -332,6 +340,9 @@ La primera versión utilizará entidades lógicas separadas para facilitar el ap
 | **Movimientos** | Entrada/salida, fecha, hora, método y resultado |
 | **Aforo** | Capacidad máxima y ocupación actual |
 | **Usuarios** | Referencia a Cognito, rol y estado de la cuenta |
+| **Dispositivos Edge** | Identidad, ubicación, modo y última sincronización |
+| **Configuración local** | Versión, vigencia e integridad de las reglas offline |
+| **Eventos pendientes** | Movimientos offline que todavía no confirma AWS |
 
 La cantidad de ingresos diarios se calculará consultando los movimientos de entrada confirmados. Si fuera necesario mejorar el rendimiento, posteriormente se podrá incorporar un contador diario por persona.
 
@@ -342,7 +353,10 @@ Más detalles: [Modelo de datos](docs/modelo-datos.md).
 ## 13. Seguridad y trazabilidad
 
 - No se guardarán claves de AWS dentro del repositorio.
-- Wokwi y la aplicación llamarán a una API; solamente Lambda utilizará permisos AWS mediante `LabRole`.
+- El servicio Edge y el dashboard llamarán a una API; solamente el backend utilizará permisos AWS mediante `LabRole`.
+- La aplicación no tomará decisiones de acceso ni almacenará capturas faciales.
+- La copia local de permisos tendrá versión, integridad y vencimiento de 12 horas.
+- Los eventos offline se enviarán posteriormente con identificadores únicos para evitar duplicados.
 - Las variables propias de cada cuenta se mantendrán fuera del código.
 - Los registros históricos no podrán modificarse ni eliminarse desde el dashboard; su eliminación o anonimización se realizará solo mediante la política de conservación.
 - Toda corrección manual guardará usuario, fecha, hora y motivo.
@@ -378,6 +392,15 @@ flowchart TD
 ```text
 AL RECIBIR una lectura RFID:
     CREAR solicitud pendiente con identificador único
+
+    SI AWS está disponible:
+        PROCESAR rostro y reglas en AWS
+    SINO SI la configuración local tiene menos de 12 horas:
+        PROCESAR rostro y reglas en el servicio Edge
+        MARCAR cualquier evento confirmado como pendiente de sincronización
+    SINO:
+        ACTIVAR modo restringido
+        PERMITIR salidas y exigir excepción auditada para nuevas entradas
 
     SI la tarjeta no existe, está bloqueada o fue reportada perdida:
         RECHAZAR solicitud
@@ -437,6 +460,9 @@ AL RECIBIR una lectura RFID:
 | Visitante con permiso vencido | Rechazar |
 | Guardia intenta función administrativa | Rechazar por permisos |
 | Corrección manual autorizada | Registrar guardia, fecha, hora y motivo |
+| AWS falla con configuración vigente | Continuar en modo offline |
+| Configuración local cumple 12 horas | Restringir entradas automáticas |
+| AWS regresa | Sincronizar eventos sin duplicar y descargar reglas nuevas |
 
 La matriz completa se encuentra en [Casos de prueba](docs/casos-prueba.md).
 
@@ -459,8 +485,10 @@ Project_You_Shall_Not_Pass/
 │   ├── modelo-datos.md
 │   ├── seguridad-y-roles.md
 │   ├── cambios-diseno-1.1.md
+│   ├── cambios-diseno-2.0.md
 │   ├── decisiones-tecnicas.md
 │   ├── estados-acceso.md
+│   ├── modos-operacion.md
 │   ├── cumplimiento-legal.md
 │   ├── costos-y-migracion-aws.md
 │   └── openapi.yaml
@@ -470,7 +498,7 @@ Project_You_Shall_Not_Pass/
 │   └── README.md
 ├── infrastructure/
 │   └── README.md
-└── wokwi/
+└── edge/
     └── README.md
 ```
 
@@ -478,8 +506,8 @@ Las carpetas permanecerán estables durante las siguientes fases:
 
 - `frontend/`: aplicación web y dashboards.
 - `backend/`: funciones Lambda y lógica de negocio.
+- `edge/`: simulador local y futuro servicio de Raspberry Pi.
 - `infrastructure/`: plantillas para recrear AWS en otra cuenta.
-- `wokwi/`: firmware y diagrama del circuito virtual.
 - `docs/`: decisiones, diagramas y evidencias de pruebas.
 
 Las direcciones, nombres de tablas, región e identificadores de cada cuenta se configurarán con variables de entorno. Así será posible pasar a otro Learner Lab sin modificar la lógica principal.
@@ -494,16 +522,17 @@ Las direcciones, nombres de tablas, región e identificadores de cada cuenta se 
 | Definir capacidad máxima | Configuración administrativa | ✅ Diseñado |
 | Mostrar disponible, casi lleno o lleno | Dashboard e indicadores | ✅ Diseñado |
 | Impedir valores negativos | Validación transaccional en backend | ✅ Diseñado |
-| RFID | Virtual en web y MFRC522 en Wokwi | ✅ Diseñado |
-| Reconocimiento facial | Ficticio inicialmente y Rekognition opcional | ✅ Diseñado |
+| RFID | Virtual en web y futuro lector conectado a Raspberry | ✅ Diseñado |
+| Reconocimiento facial | `MOCK`, Rekognition online y proveedor local futuro | ✅ Diseñado |
 | Anti-passback | Estado FUERA/DENTRO por persona | ✅ Diseñado |
 | Registrar fecha y hora | Historial de movimientos | ✅ Diseñado |
 | Contar ingresos diarios | Consulta o contador diario | ✅ Diseñado |
 | Visitantes por el día | Permiso temporal creado por guardia | ✅ Diseñado |
 | Roles guardia/administrador | Cognito y validación en Lambda | ✅ Diseñado |
-| Simulación en dos computadores | API compartida en AWS | ✅ Diseñado |
-| Implementación web | Todavía no programada | ⏳ Fase 2 |
-| Simulación Wokwi | Todavía no construida | ⏳ Fase posterior |
+| Simulación en dos computadores | Edge y dashboard conectados a AWS | ✅ Diseñado |
+| Continuidad sin AWS | Configuración local válida por 12 horas | ✅ Diseñado |
+| Implementación web | Base React, Vite y TypeScript creada | 🟡 En progreso |
+| Simulador Edge | Todavía no construido | ⏳ Fase posterior |
 | Pruebas integradas | Todavía no ejecutadas | ⏳ Fase posterior |
 
 ---
@@ -512,36 +541,37 @@ Las direcciones, nombres de tablas, región e identificadores de cada cuenta se 
 
 En la Fase 2 se deberá:
 
-1. Crear la base inicial del frontend.
+1. Reemplazar la pantalla de ejemplo del frontend por el simulador de acceso.
 2. Implementar identidades ficticias y RFID virtual.
-3. Construir el dashboard con roles de guardia y administrador.
-4. Crear las tablas de DynamoDB.
-5. Implementar la API y las funciones Lambda.
-6. Comprobar la creación de usuarios y grupos en Amazon Cognito.
-7. Ejecutar primero las reglas de acceso sin Wokwi.
-8. Conectar Wokwi mediante HTTP cuando el sistema web ya sea estable.
-9. Evaluar Amazon Rekognition solamente después de comprobar su disponibilidad y costo.
-10. Registrar los resultados de cada prueba.
+3. Separar las reglas de acceso de la interfaz.
+4. Crear el servicio Edge simulado.
+5. Conectar el Edge con `/api/v1/health` y la API de AWS.
+6. Incorporar SQLite, configuración versionada y eventos pendientes.
+7. Probar los modos `ONLINE`, `OFFLINE_VALID` y `OFFLINE_EXPIRED`.
+8. Construir los paneles de guardia y administrador.
+9. Evaluar Rekognition y el proveedor facial local de manera controlada.
+10. Registrar los resultados de cada prueba y recuperación.
 
 > Las reglas, roles, campos de visitantes y capacidad máxima deberán ser revisados por todo el equipo antes de comenzar la implementación.
 
 ---
 
-## 20. Diseño 1.1
+## 20. Diseño 2.0
 
-El Diseño 1.1 mantiene el alcance original e incorpora antes de programar:
+El Diseño 2.0 conserva las reglas del Diseño 1.1 e incorpora:
 
-- API versionada bajo `/api/v1` y contrato OpenAPI.
-- Estados controlados, idempotencia y una sola solicitud activa.
-- Proveedores faciales `MOCK` y `REKOGNITION`.
-- Orígenes RFID y dispositivos identificados.
-- Políticas, repositorios y códigos de rechazo estandarizados.
-- Correcciones mediante eventos compensatorios.
-- Pruebas de concurrencia, permisos, privacidad y fallos AWS.
-- Datos ficticios por defecto, captura facial temporal y método alternativo.
-- Conservación limitada y eliminación o anonimización controlada.
+- Raspberry Pi 4 o simulador Edge como controlador local.
+- AWS como plataforma principal y fuente oficial.
+- Procesamiento facial fuera de la PC.
+- Rekognition online y proveedor `LOCAL` offline.
+- SQLite para reglas vigentes y eventos pendientes.
+- Sincronización al iniciar, cada 5 minutos y al recuperar AWS.
+- Vigencia offline de 12 horas antes del modo restringido.
+- Flujos separados para acceso online, offline y recuperación.
+- API v1 ampliada sin romper las rutas existentes.
+- Pruebas de continuidad, sincronización e integridad de configuración.
 
-Documentos: [guía para principiantes](docs/guia-para-principiantes.md), [stack tecnológico](docs/stack-tecnologico.md), [plan de implementación](docs/plan-implementacion.md), [cambios](docs/cambios-diseno-1.1.md), [decisiones](docs/decisiones-tecnicas.md), [estados](docs/estados-acceso.md), [cumplimiento legal](docs/cumplimiento-legal.md), [costos y migración AWS](docs/costos-y-migracion-aws.md) y [OpenAPI](docs/openapi.yaml).
+Documentos: [arquitectura híbrida](docs/arquitectura.md), [guía para principiantes](docs/guia-para-principiantes.md), [stack tecnológico](docs/stack-tecnologico.md), [plan de implementación](docs/plan-implementacion.md), [cambios del Diseño 2.0](docs/cambios-diseno-2.0.md), [decisiones](docs/decisiones-tecnicas.md), [estados de acceso](docs/estados-acceso.md), [modos de operación](docs/modos-operacion.md), [cumplimiento legal](docs/cumplimiento-legal.md), [costos y migración AWS](docs/costos-y-migracion-aws.md) y [OpenAPI](docs/openapi.yaml).
 
 > Es una simulación académica de control de acceso, no un sistema certificado de asistencia laboral ni una certificación legal.
 
