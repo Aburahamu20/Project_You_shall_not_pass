@@ -3,6 +3,7 @@ import { AccessForm } from './components/AccessForm'
 import { AccessHistory } from './components/AccessHistory'
 import { SummaryCard } from './components/SummaryCard'
 import { initialPeople } from './data/mockPeople'
+import { evaluateAccess } from './services/accessRules'
 import type {
   AccessLog,
   AccessResult,
@@ -48,55 +49,36 @@ function App() {
   }
 
   const validateAccess = () => {
-    const cardOwner = people.find(
-      (person) => person.cardId === selectedCard,
-    )
+    const decision = evaluateAccess({
+      people,
+      selectedCard,
+      selectedFace,
+      direction,
+      occupancy,
+      capacity,
+    })
 
-    const faceOwner = people.find(
-      (person) => person.id === Number(selectedFace),
-    )
-
-    if (!cardOwner || !faceOwner) {
-      rejectAccess('Persona desconocida', 'Falta presentar RFID o rostro')
+    if (!decision.authorized || !decision.person) {
+      rejectAccess(
+        decision.person?.name ?? 'Persona desconocida',
+        decision.reason,
+      )
       return
     }
 
-    if (cardOwner.id !== faceOwner.id) {
-      rejectAccess(cardOwner.name, 'La tarjeta y el rostro no coinciden')
-      return
-    }
-
-    if (cardOwner.blocked) {
-      rejectAccess(cardOwner.name, 'La tarjeta está bloqueada')
-      return
-    }
-
-    if (direction === 'ENTRADA' && cardOwner.inside) {
-      rejectAccess(cardOwner.name, 'La persona ya aparece dentro')
-      return
-    }
-
-    if (direction === 'SALIDA' && !cardOwner.inside) {
-      rejectAccess(cardOwner.name, 'La persona no aparece dentro')
-      return
-    }
-
-    if (direction === 'ENTRADA' && occupancy >= capacity) {
-      rejectAccess(cardOwner.name, 'Aforo máximo alcanzado')
-      return
-    }
+    const authorizedPerson = decision.person
 
     setPeople((currentPeople) =>
       currentPeople.map((person) =>
-        person.id === cardOwner.id
+        person.id === authorizedPerson.id
           ? {
-              ...person,
-              inside: direction === 'ENTRADA',
-              entriesToday:
-                direction === 'ENTRADA'
-                  ? person.entriesToday + 1
-                  : person.entriesToday,
-            }
+            ...person,
+            inside: direction === 'ENTRADA',
+            entriesToday:
+              direction === 'ENTRADA'
+                ? person.entriesToday + 1
+                : person.entriesToday,
+          }
           : person,
       ),
     )
@@ -108,8 +90,8 @@ function App() {
     )
 
     setTurnstileOpen(true)
-    setMessage(`Acceso autorizado para ${cardOwner.name}`)
-    addLog(cardOwner.name, 'AUTORIZADO', 'Identidad validada')
+    setMessage(`Acceso autorizado para ${authorizedPerson.name}`)
+    addLog(authorizedPerson.name, 'AUTORIZADO', decision.reason)
 
     window.setTimeout(() => {
       setTurnstileOpen(false)
@@ -129,7 +111,7 @@ function App() {
           className={online ? 'connection online' : 'connection offline'}
           onClick={() => setOnline((current) => !current)}
         >
-          {online ? 'AWS conectado' : 'Modo local Raspberry Pi'}
+          {online ? 'AWS simulado' : 'Raspberry Pi simulado'}
         </button>
       </header>
 
@@ -147,8 +129,8 @@ function App() {
           value={online ? 'ONLINE' : 'OFFLINE'}
           description={
             online
-              ? 'Validación mediante AWS'
-              : 'Reglas locales vigentes por 12 horas'
+              ? 'Validación simulada mediante AWS'
+              : 'Validación local simulada con reglas vigentes por 12 horas'
           }
         />
 
