@@ -9,10 +9,10 @@ describe('GET /health', () => {
 
     expect(response.status).toBe(200)
     expect(response.body).toMatchObject({
-      status: 'ok',
+      status: 'OK',
       service: 'edge-simulator',
       simulated: true,
     })
-    expect(response.body.timestamp).toEqual(expect.any(String))
+    expect(response.body.serverTime).toEqual(expect.any(String))
   })
 })

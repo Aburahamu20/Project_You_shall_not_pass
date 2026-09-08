@@ -13,9 +13,9 @@ app.use(express.json())
 
 app.get('/health', (_request, response) => {
   response.status(200).json({
-    status: 'ok',
+    status: 'OK',
     service: 'edge-simulator',
     simulated: true,
-    timestamp: new Date().toISOString(),
+    serverTime: new Date().toISOString(),
   })
 })
