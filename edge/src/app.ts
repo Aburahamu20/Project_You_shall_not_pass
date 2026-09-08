@@ -1,6 +1,8 @@
 import cors from 'cors'
 import express from 'express'
 
+import { accessRequestsRouter } from './routes/accessRequests.js'
+
 export const app = express()
 
 app.use(
@@ -10,6 +12,8 @@ app.use(
 )
 
 app.use(express.json())
+
+app.use('/api/v1/access-requests', accessRequestsRouter)
 
 app.get('/health', (_request, response) => {
   response.status(200).json({
