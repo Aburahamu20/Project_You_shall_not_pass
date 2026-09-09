@@ -250,6 +250,7 @@ function App() {
           direction={direction}
           selectedCard={selectedCard}
           selectedFace={selectedFace}
+          validating={validating}
           onDirectionChange={setDirection}
           onCardChange={setSelectedCard}
           onFaceChange={setSelectedFace}
