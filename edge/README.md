@@ -48,7 +48,7 @@ npm.cmd run dev
 De forma predeterminada, la API queda disponible en:
 
 ```text
-http://localhost:3001
+http://localhost:8080
 ```
 
 ## Compilar el proyecto
@@ -97,7 +97,7 @@ Abre otra terminal dentro del directorio `edge` y sigue estos pasos.
 ### 1. Comprobar el estado del servidor
 
 ```powershell
-Invoke-RestMethod -Method Get -Uri "http://localhost:3001/health"
+Invoke-RestMethod -Method Get -Uri "http://localhost:8080/health"
 ```
 
 ### 2. Crear una solicitud de entrada
@@ -113,7 +113,7 @@ $body = @{
 
 $accessRequest = Invoke-RestMethod `
   -Method Post `
-  -Uri "http://localhost:3001/api/v1/access-requests" `
+  -Uri "http://localhost:8080/api/v1/access-requests" `
   -ContentType "application/json" `
   -Body $body
 
@@ -136,7 +136,7 @@ $faceBody = @{
 
 $faceResult = Invoke-RestMethod `
   -Method Post `
-  -Uri "http://localhost:3001/api/v1/access-requests/$($accessRequest.requestId)/face-verification" `
+  -Uri "http://localhost:8080/api/v1/access-requests/$($accessRequest.requestId)/face-verification" `
   -ContentType "application/json" `
   -Body $faceBody
 
@@ -158,7 +158,7 @@ $headers = @{
 
 $confirmation = Invoke-RestMethod `
   -Method Post `
-  -Uri "http://localhost:3001/api/v1/access-requests/$($accessRequest.requestId)/confirm" `
+  -Uri "http://localhost:8080/api/v1/access-requests/$($accessRequest.requestId)/confirm" `
   -Headers $headers
 
 $confirmation
@@ -173,7 +173,7 @@ La clave de idempotencia evita que una misma confirmación se procese más de un
 ```powershell
 Invoke-RestMethod `
   -Method Get `
-  -Uri "http://localhost:3001/api/v1/occupancy?locationId=OFFICE-01"
+  -Uri "http://localhost:8080/api/v1/occupancy?locationId=OFFICE-01"
 ```
 
 La respuesta contiene una estructura similar a:
