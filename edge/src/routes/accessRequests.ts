@@ -3,6 +3,8 @@ import { randomUUID } from 'node:crypto'
 import { Router } from 'express'
 
 import { createAccessRequestSchema } from '../schemas/accessRequest.js'
+import { faceVerificationSchema } from '../schemas/faceVerification.js'
+import { evaluateMockFace } from '../services/accessDecision.js'
 import {
   findAccessRequest,
   saveAccessRequest,
@@ -40,6 +42,79 @@ accessRequestsRouter.post('/', (request, response) => {
   response.status(201).json(accessRequest)
 })
 
+accessRequestsRouter.post(
+  '/:requestId/face-verification',
+  (request, response) => {
+    const { requestId } = request.params
+    const accessRequest = findAccessRequest(requestId)
+
+    if (!accessRequest) {
+      response.status(404).json({
+        code: 'REQUEST_NOT_FOUND',
+        message: 'Solicitud no encontrada',
+        requestId,
+      })
+      return
+    }
+
+    const hasExpired =
+      new Date(accessRequest.expiresAt).getTime() <= Date.now()
+
+    if (hasExpired) {
+      accessRequest.state = 'EXPIRED'
+      accessRequest.reasonCode = 'REQUEST_EXPIRED'
+      saveAccessRequest(accessRequest)
+
+      response.status(410).json({
+        code: 'REQUEST_EXPIRED',
+        message: 'La solicitud ha expirado',
+        requestId,
+      })
+      return
+    }
+
+    if (accessRequest.state !== 'PENDING_FACE') {
+      response.status(409).json({
+        code: 'INVALID_REQUEST_STATE',
+        message: 'La solicitud no espera una validación facial',
+        requestId,
+      })
+      return
+    }
+
+    const validation = faceVerificationSchema.safeParse(request.body)
+
+    if (!validation.success) {
+      response.status(400).json({
+        code: 'INVALID_FACE_VERIFICATION',
+        message: 'Los datos de validación facial no son válidos',
+        requestId,
+      })
+      return
+    }
+
+    if (validation.data.provider !== 'MOCK') {
+      response.status(501).json({
+        code: 'FACE_PROVIDER_ERROR',
+        message: 'El proveedor facial todavía no está implementado',
+        requestId,
+      })
+      return
+    }
+
+    const decision = evaluateMockFace(
+      accessRequest,
+      validation.data.mockIdentityId,
+    )
+
+    accessRequest.state = decision.state
+    accessRequest.reasonCode = decision.reasonCode
+    saveAccessRequest(accessRequest)
+
+    response.status(200).json(accessRequest)
+  },
+)
+
 accessRequestsRouter.get('/:requestId', (request, response) => {
   const { requestId } = request.params
   const accessRequest = findAccessRequest(requestId)
@@ -53,8 +128,12 @@ accessRequestsRouter.get('/:requestId', (request, response) => {
     return
   }
 
+  const canExpire =
+    accessRequest.state === 'PENDING_FACE' ||
+    accessRequest.state === 'AUTHORIZED'
+
   const hasExpired =
-    accessRequest.state === 'PENDING_FACE' &&
+    canExpire &&
     new Date(accessRequest.expiresAt).getTime() <= Date.now()
 
   if (hasExpired) {
