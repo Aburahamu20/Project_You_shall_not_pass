@@ -3,6 +3,8 @@ import express from 'express'
 
 import { accessRequestsRouter } from './routes/accessRequests.js'
 
+import { occupancyRouter } from './routes/occupancy.js'
+
 export const app = express()
 
 app.use(
@@ -14,6 +16,8 @@ app.use(
 app.use(express.json())
 
 app.use('/api/v1/access-requests', accessRequestsRouter)
+
+app.use('/api/v1/occupancy', occupancyRouter)
 
 app.get('/health', (_request, response) => {
   response.status(200).json({
