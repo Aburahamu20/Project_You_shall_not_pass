@@ -1,7 +1,15 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest'
 
 import { resetPeople } from '../src/data/mockPeople.js'
 import { evaluateMockFace } from '../src/services/accessDecision.js'
+import * as occupancyService from '../src/services/occupancy.js'
 import type { AccessRequest } from '../src/types/accessRequest.js'
 
 function createRequest(
@@ -26,6 +34,10 @@ function createRequest(
 describe('evaluateMockFace', () => {
   beforeEach(() => {
     resetPeople()
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
   })
 
   it('autoriza cuando la tarjeta y el rostro coinciden', () => {
@@ -91,6 +103,44 @@ describe('evaluateMockFace', () => {
     expect(decision).toEqual({
       state: 'REJECTED',
       reasonCode: 'ALREADY_OUTSIDE',
+    })
+  })
+
+  it('rechaza una entrada cuando el aforo está lleno', () => {
+    vi.spyOn(occupancyService, 'getOccupancy').mockReturnValue({
+      locationId: 'OFFICE-01',
+      current: 10,
+      maximum: 10,
+      status: 'FULL',
+    })
+
+    const decision = evaluateMockFace(createRequest(), '1')
+
+    expect(decision).toEqual({
+      state: 'REJECTED',
+      reasonCode: 'CAPACITY_FULL',
+    })
+  })
+
+  it('permite una salida aunque el aforo esté lleno', () => {
+    vi.spyOn(occupancyService, 'getOccupancy').mockReturnValue({
+      locationId: 'OFFICE-01',
+      current: 10,
+      maximum: 10,
+      status: 'FULL',
+    })
+
+    const decision = evaluateMockFace(
+      createRequest({
+        cardUid: 'RFID-002',
+        direction: 'EXIT',
+      }),
+      '2',
+    )
+
+    expect(decision).toEqual({
+      state: 'AUTHORIZED',
+      reasonCode: null,
     })
   })
 })

@@ -2,6 +2,7 @@ import {
   findPersonByCardUid,
   findPersonById,
 } from '../data/mockPeople.js'
+import { getOccupancy } from './occupancy.js'
 import type { AccessRequest } from '../types/accessRequest.js'
 
 type AccessDecision = {
@@ -48,6 +49,17 @@ export function evaluateMockFace(
     return {
       state: 'REJECTED',
       reasonCode: 'ALREADY_OUTSIDE',
+    }
+  }
+
+  if (accessRequest.direction === 'ENTRY') {
+    const occupancy = getOccupancy(accessRequest.locationId)
+
+    if (occupancy?.status === 'FULL') {
+      return {
+        state: 'REJECTED',
+        reasonCode: 'CAPACITY_FULL',
+      }
     }
   }
 
