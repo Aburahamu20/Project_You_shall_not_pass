@@ -5,6 +5,7 @@ type AccessFormProps = {
   direction: Direction
   selectedCard: string
   selectedFace: string
+  validating: boolean
   onDirectionChange: (direction: Direction) => void
   onCardChange: (cardId: string) => void
   onFaceChange: (personId: string) => void
@@ -16,6 +17,7 @@ export function AccessForm({
   direction,
   selectedCard,
   selectedFace,
+  validating,
   onDirectionChange,
   onCardChange,
   onFaceChange,
@@ -27,14 +29,18 @@ export function AccessForm({
 
       <div className="direction-buttons">
         <button
+          type="button"
           className={direction === 'ENTRADA' ? 'active' : ''}
+          disabled={validating}
           onClick={() => onDirectionChange('ENTRADA')}
         >
           Entrada
         </button>
 
         <button
+          type="button"
           className={direction === 'SALIDA' ? 'active' : ''}
+          disabled={validating}
           onClick={() => onDirectionChange('SALIDA')}
         >
           Salida
@@ -45,6 +51,7 @@ export function AccessForm({
         Tarjeta RFID
         <select
           value={selectedCard}
+          disabled={validating}
           onChange={(event) => onCardChange(event.target.value)}
         >
           <option value="">Seleccione una tarjeta</option>
@@ -61,6 +68,7 @@ export function AccessForm({
         Rostro simulado
         <select
           value={selectedFace}
+          disabled={validating}
           onChange={(event) => onFaceChange(event.target.value)}
         >
           <option value="">Seleccione un rostro</option>
@@ -73,8 +81,14 @@ export function AccessForm({
         </select>
       </label>
 
-      <button className="validate-button" onClick={onValidate}>
-        Validar identidad
+      <button
+        type="button"
+        className="validate-button"
+        disabled={validating}
+        aria-busy={validating}
+        onClick={onValidate}
+      >
+        {validating ? 'Validando…' : 'Validar identidad'}
       </button>
     </article>
   )
