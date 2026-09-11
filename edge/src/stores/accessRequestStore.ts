@@ -15,6 +15,11 @@ type AccessRequestRow = {
   expiresAt: string
 }
 
+export type AccessRequestCleanupResult = {
+  expired: number
+  deleted: number
+}
+
 const database = getDatabase()
 
 const saveAccessRequestStatement = database.prepare(`
@@ -78,6 +83,30 @@ const findIdempotencyKeyStatement = database.prepare(`
   WHERE idempotency_key = ?
 `)
 
+const expireAccessRequestsStatement = database.prepare(`
+  UPDATE access_requests
+  SET
+    state = 'EXPIRED',
+    reason_code = 'REQUEST_EXPIRED'
+  WHERE state IN (
+    'PENDING_FACE',
+    'VALIDATING',
+    'AUTHORIZED'
+  )
+    AND expires_at <= ?
+`)
+
+const deleteOldAccessRequestsStatement = database.prepare(`
+  DELETE FROM access_requests
+  WHERE state IN (
+    'CONFIRMED',
+    'REJECTED',
+    'EXPIRED',
+    'CANCELLED'
+  )
+    AND created_at <= ?
+`)
+
 export function saveAccessRequest(
   accessRequest: AccessRequest,
 ): AccessRequest {
@@ -126,6 +155,48 @@ export function findRequestIdByIdempotencyKey(
   ) as { requestId: string } | undefined
 
   return row?.requestId
+}
+
+export function cleanupAccessRequests(
+  now = new Date(),
+  retentionDays = 30,
+): AccessRequestCleanupResult {
+  if (
+    !Number.isFinite(retentionDays) ||
+    retentionDays <= 0
+  ) {
+    throw new RangeError(
+      'retentionDays debe ser un número mayor que cero',
+    )
+  }
+
+  const nowTimestamp = now.toISOString()
+  const retentionMilliseconds =
+    retentionDays * 24 * 60 * 60 * 1000
+
+  const retentionLimit = new Date(
+    now.getTime() - retentionMilliseconds,
+  ).toISOString()
+
+  database.exec('BEGIN')
+
+  try {
+    const expirationResult =
+      expireAccessRequestsStatement.run(nowTimestamp)
+
+    const deletionResult =
+      deleteOldAccessRequestsStatement.run(retentionLimit)
+
+    database.exec('COMMIT')
+
+    return {
+      expired: Number(expirationResult.changes),
+      deleted: Number(deletionResult.changes),
+    }
+  } catch (error) {
+    database.exec('ROLLBACK')
+    throw error
+  }
 }
 
 export function clearAccessRequests(): void {
