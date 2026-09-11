@@ -1,4 +1,8 @@
-import { findPersonByCardUid } from '../data/mockPeople.js'
+import {
+  findPersonByCardUid,
+  savePerson,
+} from '../data/mockPeople.js'
+
 import type { AccessRequest } from '../types/accessRequest.js'
 
 type ConfirmationDecision = {
@@ -38,6 +42,8 @@ export function confirmPersonCrossing(
 
     person.inside = false
   }
+
+  savePerson(person)
 
   return {
     confirmed: true,

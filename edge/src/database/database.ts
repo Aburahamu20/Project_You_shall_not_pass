@@ -50,7 +50,8 @@ export function createDatabase(
 export function getDatabase(): DatabaseSync {
   if (!activeDatabase) {
     const databasePath =
-      process.env.EDGE_DATABASE_PATH ?? defaultDatabasePath
+        process.env.EDGE_DATABASE_PATH ??
+        (process.env.VITEST ? ':memory:' : defaultDatabasePath)
 
     activeDatabase = createDatabase(databasePath)
   }
