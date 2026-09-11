@@ -42,6 +42,66 @@ export function createDatabase(
         CHECK (entries_today >= 0),
       updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE TABLE IF NOT EXISTS access_requests (
+      request_id TEXT PRIMARY KEY,
+      card_uid TEXT NOT NULL,
+      direction TEXT NOT NULL
+        CHECK (direction IN ('ENTRY', 'EXIT')),
+      source TEXT NOT NULL
+        CHECK (
+          source IN (
+            'WEB_SIMULATOR',
+            'EDGE_SIMULATOR',
+            'RASPBERRY_PI',
+            'PHYSICAL_READER'
+          )
+        ),
+      device_id TEXT NOT NULL,
+      location_id TEXT NOT NULL,
+      state TEXT NOT NULL
+        CHECK (
+          state IN (
+            'PENDING_FACE',
+            'VALIDATING',
+            'AUTHORIZED',
+            'CONFIRMED',
+            'REJECTED',
+            'EXPIRED',
+            'CANCELLED'
+          )
+        ),
+      reason_code TEXT,
+      operation_mode TEXT NOT NULL
+        CHECK (
+          operation_mode IN (
+            'ONLINE',
+            'OFFLINE_VALID',
+            'OFFLINE_EXPIRED',
+            'SYNCING',
+            'LOCKDOWN'
+          )
+        ),
+      created_at TEXT NOT NULL,
+      expires_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS confirmation_idempotency_keys (
+      idempotency_key TEXT PRIMARY KEY,
+      request_id TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (request_id)
+        REFERENCES access_requests(request_id)
+        ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS
+      idx_access_requests_location_created
+      ON access_requests(location_id, created_at);
+
+    CREATE INDEX IF NOT EXISTS
+      idx_access_requests_state
+      ON access_requests(state);
   `)
 
   return database
@@ -50,8 +110,8 @@ export function createDatabase(
 export function getDatabase(): DatabaseSync {
   if (!activeDatabase) {
     const databasePath =
-        process.env.EDGE_DATABASE_PATH ??
-        (process.env.VITEST ? ':memory:' : defaultDatabasePath)
+      process.env.EDGE_DATABASE_PATH ??
+      (process.env.VITEST ? ':memory:' : defaultDatabasePath)
 
     activeDatabase = createDatabase(databasePath)
   }
